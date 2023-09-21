@@ -7,3 +7,4 @@ current todo:
 -gitignore?
 -aseprite assets and all dat?
 -structure this like a real repo lol
+-find a way to easily manage prs and github while still developing in the srb2 dir. maybe a builder can fix this?
