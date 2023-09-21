@@ -1,0 +1,170 @@
+rawset(_G,"ACHIEVEMENT_COMBO",1<<0)
+rawset(_G,"ACHIEVEMENT_BANANA",1<<1)
+rawset(_G,"ACHIEVEMENT_RAKIS",1<<2)
+rawset(_G,"ACHIEVEMENT_PARTYPOOPER",1<<3)
+rawset(_G,"ACHIEVEMENT_TAKISFEST",1<<4)
+rawset(_G,"ACHIEVEMENT_HOMERUN",1<<5)
+rawset(_G,"ACHIEVEMENT_HEATSTROKE",1<<6)
+rawset(_G,"ACHIEVEMENT_FULLCOMBO",1<<7)
+rawset(_G,"ACHIEVEMENT_JUMPSCARE",1<<8)
+rawset(_G,"ACHIEVEMENT_HARDCORE",1<<9)
+rawset(_G,"ACHIEVEMENT_CLUTCHSPAM",1<<10)
+rawset(_G,"ACHIEVEMENT_ARIDCORE",1<<11)
+rawset(_G,"ACHIEVEMENT_COMBOCLOSE",1<<12)
+rawset(_G,"ACHIEVEMENT_COMBOALMOST",1<<13)
+rawset(_G,"NUMACHIEVEMENTS",14)
+
+rawset(_G,"ACHIEVEMENT_PATH","client/takisthefox/coolswag.dat")
+
+rawset(_G,"TAKIS_ACHIEVEMENTINFO",{
+	[ACHIEVEMENT_COMBO] = {
+		name = "Ultimate Combo",
+		icon = "ACH_COMBO",
+		scale = FU/4,
+		text = "Get a high combo on a".."\n".."map without dropping it."
+	},
+	[ACHIEVEMENT_BANANA] = {
+		name = "Banana Man",
+		icon = "ACH_BANANA",
+		scale = FU/4,
+		text = "Slip on a banana."
+	},
+	[ACHIEVEMENT_RAKIS] = {
+		name = "Alter Ego",
+		icon = "ACH_RAKIS",
+		scale = FU/4,
+		text = "Who is this guy?"
+	},
+	[ACHIEVEMENT_PARTYPOOPER] = {
+		name = "Party Pooper",
+		icon = "ACH_PARTYPOOPER",
+		scale = FU/4,
+		text = "Hurt someone doing a partner\ntaunt."
+	},
+	[ACHIEVEMENT_TAKISFEST] = {
+		name = "Takis Fest",
+		icon = "ACH_TAKISFEST",
+		scale = FU/4,
+		text = "Have 6 or more Takis in a\nserver."
+	},
+	[ACHIEVEMENT_HOMERUN] = {
+		name = "MLB MVP",
+		icon = "ACH_HOMERUN",
+		scale = FU/4,
+		text = "Hit someone with a Homerun\n".."bat."
+	},
+	[ACHIEVEMENT_HEATSTROKE] = {
+		name = "Heatstroked",
+		icon = "ACH_HEATSTROKE",
+		scale = FU/4,
+		text = "Die to Sunstroke."
+	},
+	[ACHIEVEMENT_FULLCOMBO] = {
+		name = "Full Combo",
+		icon = "ACH_FULLCOMBO",
+		scale = FU/4,
+		text = "Destroy everything in a\nmap."
+	},
+	[ACHIEVEMENT_JUMPSCARE] = {
+		name = "That didn't scare me!",
+		icon = "ACH_JUMPSCARE",
+		scale = FU/4,
+		text = "Get jumpscared."
+	},
+	[ACHIEVEMENT_HARDCORE] = {
+		name = "Hardcore Enjoyer",
+		icon = "ACH_HARDCORE",
+		scale = FU/4,
+		text = "Beat a level with no Cards."
+	},
+	[ACHIEVEMENT_CLUTCHSPAM] = {
+		name = "Amatuer Clutcher",
+		icon = "ACH_CLUTCHSPAM",
+		scale = FU/4,
+		text = "Never learn how to Clutch\nproperly."
+	},
+	[ACHIEVEMENT_ARIDCORE] = {
+		name = "Texas Day",
+		icon = "ACH_PLACEHOLDER",
+		scale = FU/4,
+		text = "Beat a Hot level with no\n".."Cards and with Sunstroke."
+	},
+	[ACHIEVEMENT_COMBOCLOSE] = {
+		name = "Close Call!",
+		icon = "ACH_COMBOCLOSE",
+		scale = FU/4,
+		text = "Save a high combo from\n".."ending."
+	},
+	[ACHIEVEMENT_COMBOALMOST] = {
+		name = "Almost had it..!",
+		icon = "ACH_PLACEHOLDER",
+		scale = FU/4,
+		text = "Start a new combo just\n".."after losing a high one."
+	},
+})
+
+rawset(_G,"TakisReadAchievements",function(p)
+	local number = 0
+	
+	if io
+		DEBUG_print(p,"Using I/O, Reading Achs.")
+		
+		local file = io.openlocal(ACHIEVEMENT_PATH)
+		
+		if file
+			
+			number = tonumber(file:read("*a"))
+			
+			file:close()
+		end
+	end
+	
+	p.takistable.achfile = number
+end)
+
+local function writeach(p,ach,num)
+	if consoleplayer ~= p
+		return
+	end
+	
+	if io
+		
+		DEBUG_print(p,"Using I/O, Writing Achs.")
+		
+		local file = io.openlocal(ACHIEVEMENT_PATH, "w+")
+		local pro = num|ach
+		file:write(tostring(pro))
+			
+		file:close()
+		
+	end
+
+end
+
+rawset(_G,"TakisAwardAchievement",function(p,achieve)
+	if achieve == nil
+		error("TakisAwardAchievement was not given an achievement!")
+	end
+	if type(achieve) ~= "number"
+		error("Second argument to TakisAwardAchievement must be an ACHIEVEMENT_* constant.")
+	end
+	if not achieve
+		error("ACHIEVEMENT_ constant out of range.")
+	end
+	
+	TakisReadAchievements(p)
+	local number = p.takistable.achfile
+	
+	//we already have the achievement
+	if (number & (achieve))
+		return
+	end
+	
+	S_StartSound(nil,sfx_achern)
+	
+	chatprint("\x82*"..p.name.." has just gotten the \x83"..TAKIS_ACHIEVEMENTINFO[achieve].name.."\x82 achievement!")
+	
+	table.insert(p.takistable.HUD.steam,{tics = 4*TR,xadd = 9324919,enum = achieve})
+	
+	writeach(p,achieve,number)
+end)
