@@ -45,6 +45,7 @@ local filelistt1 = {
 	"functions",
 	"taunts",
 	"menu",
+	"happyhour",
 }
 local filelist = {
 	"io",

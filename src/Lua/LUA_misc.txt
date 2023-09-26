@@ -175,6 +175,30 @@ local function isIcy(map)
 
 end
 
+local transtonum = {
+	[FF_TRANS90] = 9,
+	[FF_TRANS80] = 8,
+	[FF_TRANS70] = 7,
+	[FF_TRANS60] = 6,
+	[FF_TRANS50] = 5,
+	[FF_TRANS40] = 4,
+	[FF_TRANS30] = 3,
+	[FF_TRANS20] = 2,
+	[FF_TRANS10] = 1,
+}
+local numtotrans = {
+	[9] = FF_TRANS90,
+	[8] = FF_TRANS80,
+	[7] = FF_TRANS70,
+	[6] = FF_TRANS60,
+	[5] = FF_TRANS50,
+	[4] = FF_TRANS40,
+	[3] = FF_TRANS30,
+	[2] = FF_TRANS20,
+	[1] = FF_TRANS10,
+	[0] = 0,
+}
+
 addHook("MapChange", function(mapid)
 	TAKIS_MAX_HEARTCARDS = 6
 	if (mapheaderinfo[mapid].takis_maxheartcards)
@@ -258,7 +282,7 @@ addHook("MapLoad", function(mapid)
 		numplayers = $+1		
 	end
 		
-	t.partdestroy = t.numdestroyables/(numplayers+2)
+	t.partdestroy = t.numdestroyables/(numplayers+2) or 1
 	
 end)
 
@@ -378,15 +402,7 @@ addHook("MobjThinker", function(ai)
 		return
 	end
 	
-	if (leveltime % 6) > 3
-		ai.frame = $|TR_TRANS70
-		//ai.flags2 = $ &~MF2_DONTDRAW
-	else
-		ai.frame = $|TR_TRANS90
-		//ai.flags2 = $|MF2_DONTDRAW
-	end
-	
-	local p = ai.target.player
+	local p = ai.target.player or server
 	local me = p.mo
 	
 	//bruh
@@ -396,43 +412,48 @@ addHook("MobjThinker", function(ai)
 		return	
 	end
 	
-	ai.spritexoffset = ai.takis_spritexoffset
-	ai.spriteyoffset = ai.takis_spriteyoffset
-	ai.spritexscale = ai.takis_spritexscale
-	ai.spriteyscale = ai.takis_spriteyscale
-	ai.rollangle = ai.takis_rollangle
+	ai.spritexoffset = ai.takis_spritexoffset or 0
+	ai.spriteyoffset = ai.takis_spriteyoffset or 0
+	ai.spritexscale = ai.takis_spritexscale or FU
+	ai.spriteyscale = ai.takis_spriteyscale or FU
+	ai.rollangle = ai.takis_rollangle or 0
 	
 	ai.frame = ai.takis_frame
 	
 	ai.colorized = true
 	if not ai.timealive
-		ai.timealive = 1
+		ai.timealive = 1	
 	else
 		ai.timealive = $+1
 	end
 	
-	if ai.timealive % 6 <= 2
-		ai.frame = $|FF_TRANS10
+	if p.takistable.io.additiveai
+		local transnum = numtotrans[((ai.timealive*2/3)+1) %9]
+		ai.frame = $|transnum
 	else
-		if P_RandomChance(FU/2)
-			ai.frame = $|FF_TRANS70
+		if ai.timealive % 6 <= 2
+			ai.frame = $|FF_TRANS10
 		else
-			ai.frame = $|FF_TRANS50
+			if P_RandomChance(FU/2)
+				ai.frame = $|FF_TRANS70
+			else
+				ai.frame = $|FF_TRANS50
+			end
 		end
 	end
 	
 	//no interpolation please fingers crossed???????
 	//i said PLEASE
-	P_SetOrigin(ai, ai.x, ai.y, ai.z)
+	P_MoveOrigin(ai, ai.x, ai.y, ai.z)
 	
 	if not (camera.chase)
 		//only dontdraw afterimages that are too close to the player
-		local dist = TAKIS_TAUNT_DIST*7
+		local dist = TAKIS_TAUNT_DIST*3
 		
-		local dx = ai.x-me.x
-		local dy = ai.y-me.y
-		local dz = ai.z-me.z
-		if FixedHypot(FixedHypot(dx,dy),dz) < TAKIS_TAUNT_DIST
+		local dx = me.x-ai.x
+		local dy = me.y-ai.y
+		local dz = me.z-ai.z
+		if FixedHypot(FixedHypot(dx,dy),dz) < dist
 			ai.flags2 = $|MF2_DONTDRAW
 		else
 			ai.flags2 = $ &~MF2_DONTDRAW
@@ -836,6 +857,7 @@ local specsongs = {
 	["hapyhr"] = true,
 	["hpyhr2"] = true,
 	["_drown"] = true,
+	["_inter"] = true,
 }
 
 local function happyhourmus(oldname, newname, _,_,_,prefade,fade)
@@ -851,7 +873,7 @@ local function happyhourmus(oldname, newname, _,_,_,prefade,fade)
 		return
 	end
 	
-	if (gametype == GT_PIZZATIMEJISK)
+	if (consoleplayer.takistable.happyhour.gt)
 	
 		if (consoleplayer.takistable.io.nohappyhour == 1)
 			return
@@ -1120,7 +1142,7 @@ addHook("MobjDeath",function(gun,i)
 		P_SetObjectMomZ(rag,10*FU)
 		P_Thrust(rag, R_PointToAngle2(rag.x,rag.y, i.x,i.y), -5*rag.scale)
 		
-		S_StartSound(rag,sfx_shgnk)
+		S_StartSound(i,sfx_shgnk)
 	end
 end,MT_TAKIS_SHOTGUN)
 
@@ -1224,6 +1246,8 @@ addHook("PreThinkFrame",function()
 		or not p.valid
 			continue
 		end
+		
+		//p.happyhourscream = {}
 		
 		if not p.takistable
 			continue
@@ -1611,5 +1635,19 @@ addHook("PostThinkFrame", function ()
         end
     end
 end)
+
+addHook("MobjThinker",function(ring)
+	if not ring
+	or not ring.valid
+		return
+	end
+	
+	//idk why regular fuse cant do this
+	local start = ring.startingtrans
+	local startn = transtonum[ring.startingtrans]
+	if ring.fuse < 10-startn
+		ring.frame = A|numtotrans[10-ring.fuse]
+	end
+end,MT_WINDRINGLOL)
 
 filesdone = $+1

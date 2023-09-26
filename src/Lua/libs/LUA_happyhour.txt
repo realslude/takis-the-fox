@@ -1,0 +1,9 @@
+//happy hour stuff
+
+rawset(_G,"HAPPY_HOUR",{
+	gt = {
+		/*EX.
+		[GT_COOP] = true,
+		*/
+	},
+})

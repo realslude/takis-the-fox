@@ -20,6 +20,14 @@ local wht = "\x80"
 rawset(_G, "TR", TICRATE)
 
 rawset(_G, "TAKIS_ISDEBUG", true)
+rawset(_G, "TAKIS_DEBUGFLAG", 0)
+local dbgflags = {
+	"BUTTONS",
+}
+for k,v in ipairs(dbgflags)
+	rawset(_G,"DEBUG_"..v,1<<(k-1))
+	print("Enummed DEBUG_"..v.." ("..1<<(k-1)..")")
+end
 
 rawset(_G, "DEBUG_print",function(p,...)
 	if not TAKIS_ISDEBUG
@@ -91,6 +99,7 @@ local hurtmsgenum = {
 }
 for k,v in ipairs(hurtmsgenum)
 	rawset(_G,"HURTMSG_"..v,k-1)
+	print("Enummed HURTMSG_"..v.." ("..(k-1)..")")
 end
 
 //spike stuff according tro source
@@ -219,6 +228,8 @@ rawset(_G, "TakisInitTable", function(p)
 		drilleffect = 0,
 		issuperman = false,
 		attracttarg = nil,
+		afterimagecolor = 1,
+		dustspawnwait = 0,
 		
 		taunttime = 0,
 		tauntid = 0,
@@ -348,6 +359,38 @@ rawset(_G, "TakisInitTable", function(p)
 			[HURTMSG_HAMMERBOX] = {text = "Hammer",tics = 0},
 			[HURTMSG_HAMMERQUAKE] = {text = "Earthquake",tics = 0},
 			[HURTMSG_ARMA] = {text = "Armageddon Shield",tics = 0},
+		},
+		happyhour = {
+			gt = false,
+			on = false,
+			time = 0,
+			timeleft = 0,
+		},
+		bonuses = {
+			["shotgun"] = {
+				tics = 0, 
+				score = 0,
+				text = "Shotgun"
+			},
+			["ultimatecombo"] = {
+				tics = 0, 
+				score = 0,
+				text = "\x82Ultimate Combo"
+			},
+			cards = {},
+			cardpieces = {},
+			/*
+			["heartcard"] = {
+				tics = 0, 
+				score = 0,
+				text = pnk.."Heart Card"
+			},
+			["heartcardpiece"] = {
+				tics = 0, 
+				score = 0,
+				text = pnk.."Heart Card Piece"
+			},
+			*/
 		},
 		
 		shotgunned = false,

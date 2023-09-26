@@ -143,6 +143,103 @@ rawset(_G, "TakisBooleans", function(p,me,takis,SKIN)
 	takis.inNIGHTSMode = (p.powers[pw_carry] == CR_NIGHTSMODE) or (maptol & TOL_NIGHTS)
 end)
 
+local function dorandom()
+	local random = P_RandomRange(0,1)
+	if random == 0
+		random = -1
+	end
+	return random
+end
+local function getdec(random)
+	return P_RandomByte() * 256 * random
+end
+
+rawset(_G, "TakisAnimateHappyHour", function(p)
+	local takis = p.takistable
+	local hud = takis.HUD
+	local me = p.mo
+
+	if ( ((JISK_PIZZATIMETICS) and (JISK_PIZZATIMETICS <= 5*TR))
+	or ((PTJE) and (PTJE.pizzatime_tics) and (PTJE.pizzatime_tics <= 5*TR)) )
+	
+	and (takis.io.nohappyhour == 0)
+		
+		local tics = JISK_PIZZATIMETICS or ((PTJE) and (PTJE.pizzatime_tics))
+		if tics == 1
+			hud.happyhour.its.yadd = -200*FU
+			hud.happyhour.happy.yadd = -100*FU
+			hud.happyhour.hour.yadd = -100*FU
+			hud.happyhour.face.yadd = -200*FU
+		end
+		
+		hud.happyhour.its.frame = ((leveltime/3)%2)
+		hud.happyhour.happy.frame = ((leveltime/3)%2)
+		hud.happyhour.hour.frame = ((leveltime/3)%2)
+		hud.happyhour.face.frame = ((leveltime/3)%2)
+		
+		if hud.happyhour.doingit
+			if not hud.happyhour.falldown
+				if hud.happyhour.its.yadd ~= 0
+					hud.happyhour.its.yadd = 2*$/5
+					
+				elseif hud.happyhour.happy.yadd ~= 0
+					hud.happyhour.happy.yadd = 2*$/5
+				
+				elseif hud.happyhour.hour.yadd ~= 0
+					hud.happyhour.hour.yadd = 2*$/5
+				end
+				
+				//elseif hud.happyhour.face.yadd ~= 0
+					hud.happyhour.face.yadd = 4*$/5
+			else
+			
+				hud.happyhour.its.yadd = $*8/5
+				hud.happyhour.happy.yadd = $*7/5
+				hud.happyhour.hour.yadd = $*6/5
+				hud.happyhour.face.yadd = $*8/7
+			
+			end
+		end
+
+		hud.happyhour.doingit = true
+		
+		local tics = JISK_PIZZATIMETICS or PTJE.pizzatime_tics
+		
+		local h = hud.happyhour
+		local y = 40*FU
+		hud.happyhour.xadd = P_RandomFixed()
+		if ((leveltime%4) < 3)
+			hud.happyhour.xadd = -$
+		end
+		local back = 4*FU/5
+		
+		hud.happyhour.its.scale = ease.inoutback(( FU / h.its.expectedtime )*tics, FU/100, 3*FU/5,back)
+		hud.happyhour.happy.scale = ease.inoutback(( FU / h.happy.expectedtime )*tics, FU/100, 3*FU/5,back)
+		hud.happyhour.hour.scale = ease.inoutback(( FU / h.hour.expectedtime )*tics, FU/100, 3*FU/5,back)
+				
+		if tics >= 2*TR
+			hud.happyhour.falldown = true
+			if tics == 2*TR
+				hud.happyhour.its.yadd = FU
+				hud.happyhour.happy.yadd = FU
+				hud.happyhour.hour.yadd = FU
+				hud.happyhour.face.yadd = FU
+			end
+		end
+	
+	else
+		hud.happyhour.doingit = false
+		hud.happyhour.scale = FU/20
+		hud.happyhour.falldown = false
+		hud.happyhour.its.yadd = 0
+		hud.happyhour.happy.yadd = 0
+		hud.happyhour.hour.yadd = 0
+	
+	end
+	
+
+end)
+
 rawset(_G, "TakisHUDStuff", function(p)
 	local takis = p.takistable
 	local hud = takis.HUD
@@ -271,83 +368,70 @@ rawset(_G, "TakisHUDStuff", function(p)
 		hud.rank.grow = $/2
 	end
 
-	if ( ((JISK_PIZZATIMETICS) and (JISK_PIZZATIMETICS <= 5*TR))
-	or ((PTJE) and (PTJE.pizzatime_tics) and (PTJE.pizzatime_tics <= 5*TR)) )
+	TakisAnimateHappyHour(p)
 	
-	and (takis.io.nohappyhour == 0)
-		
-		local tics = JISK_PIZZATIMETICS or ((PTJE) and (PTJE.pizzatime_tics))
-		if tics == 1
-			takis.HUD.happyhour.its.yadd = -200*FU
-			takis.HUD.happyhour.happy.yadd = -100*FU
-			takis.HUD.happyhour.hour.yadd = -100*FU
-			takis.HUD.happyhour.face.yadd = -200*FU
-		end
-		
-		takis.HUD.happyhour.its.frame = ((leveltime/3)%2)
-		takis.HUD.happyhour.happy.frame = ((leveltime/3)%2)
-		takis.HUD.happyhour.hour.frame = ((leveltime/3)%2)
-		takis.HUD.happyhour.face.frame = ((leveltime/3)%2)
-		
-		if takis.HUD.happyhour.doingit
-			if not takis.HUD.happyhour.falldown
-				if takis.HUD.happyhour.its.yadd ~= 0
-					takis.HUD.happyhour.its.yadd = 2*$/5
-					
-				elseif takis.HUD.happyhour.happy.yadd ~= 0
-					takis.HUD.happyhour.happy.yadd = 2*$/5
-				
-				elseif takis.HUD.happyhour.hour.yadd ~= 0
-					takis.HUD.happyhour.hour.yadd = 2*$/5
-				end
-				
-				//elseif takis.HUD.happyhour.face.yadd ~= 0
-					takis.HUD.happyhour.face.yadd = 4*$/5
-			else
-			
-				takis.HUD.happyhour.its.yadd = $*8/5
-				takis.HUD.happyhour.happy.yadd = $*7/5
-				takis.HUD.happyhour.hour.yadd = $*6/5
-				takis.HUD.happyhour.face.yadd = $*8/7
-			
-			end
-		end
+	local random = dorandom()
 
-		takis.HUD.happyhour.doingit = true
-		
-		local tics = JISK_PIZZATIMETICS or PTJE.pizzatime_tics
-		
-		local h = takis.HUD.happyhour
-		local y = 40*FU
-		takis.HUD.happyhour.xadd = P_RandomFixed()
-		if ((leveltime%4) < 3)
-			takis.HUD.happyhour.xadd = -$
-		end
-		local back = 4*FU/5
-		
-		takis.HUD.happyhour.its.scale = ease.inoutback(( FU / h.its.expectedtime )*tics, FU/100, 3*FU/5,back)
-		takis.HUD.happyhour.happy.scale = ease.inoutback(( FU / h.happy.expectedtime )*tics, FU/100, 3*FU/5,back)
-		takis.HUD.happyhour.hour.scale = ease.inoutback(( FU / h.hour.expectedtime )*tics, FU/100, 3*FU/5,back)
+	local score = p.score
+	if hud.flyingscore.tics
+		score = p.score-hud.flyingscore.lastscore
+	end
+	random = dorandom()
+	
+	if not paused
+		if score > hud.flyingscore.scorenum
+			if (score-hud.flyingscore.scorenum >= 5)
+				hud.flyingscore.scorenum = $+5
 				
-		if tics >= 2*TR
-			takis.HUD.happyhour.falldown = true
-			if tics == 2*TR
-				takis.HUD.happyhour.its.yadd = FU
-				takis.HUD.happyhour.happy.yadd = FU
-				takis.HUD.happyhour.hour.yadd = FU
-				takis.HUD.happyhour.face.yadd = FU
+				random = dorandom()
+				hud.flyingscore.xshake = getdec(random) //v.RandomFixed()*random
+				random = dorandom()
+				hud.flyingscore.yshake = getdec(random) //v.RandomFixed()*random
+				
+				for i = 1,1000
+					if (score-hud.flyingscore.scorenum >= 5*(i+1))
+						
+						hud.flyingscore.scorenum = $+5
+						
+						random = dorandom(v)
+						hud.flyingscore.xshake = $+getdec(random) //FixedDiv(v.RandomFixed(),2*FU)*random
+						random = dorandom(v)
+						hud.flyingscore.yshake = $+getdec(random) //FixedDiv(v.RandomFixed(),2*FU)*random
+					
+					end
+				end
+			else
+				hud.flyingscore.scorenum = $+score-hud.flyingscore.scorenum
+			end
+		elseif score < hud.flyingscore.scorenum
+			if (hud.flyingscore.scorenum-score >= 5)
+				hud.flyingscore.scorenum = $-5
+				
+				random = dorandom()
+				hud.flyingscore.xshake = -getdec(random)
+				random = dorandom()
+				hud.flyingscore.yshake = -getdec(random)
+				
+				for i = 1,1700
+					if (hud.flyingscore.scorenum-score >= 5*(i+1))
+						
+						hud.flyingscore.scorenum = $-5
+						
+						random = dorandom()
+						hud.flyingscore.xshake = $-getdec(random) //FixedDiv(v.RandomFixed(),2*FU)*random
+						random = dorandom()
+						hud.flyingscore.yshake = $-getdec(random) //FixedDiv(v.RandomFixed(),2*FU)*random
+					
+					end
+				end
+			else
+				hud.flyingscore.scorenum = $-(hud.flyingscore.scorenum-score)
 			end
 		end
-	
-	else
-		takis.HUD.happyhour.doingit = false
-		takis.HUD.happyhour.scale = FU/20
-		takis.HUD.happyhour.falldown = false
-		takis.HUD.happyhour.its.yadd = 0
-		takis.HUD.happyhour.happy.yadd = 0
-		takis.HUD.happyhour.hour.yadd = 0
-	
 	end
+		
+	hud.flyingscore.xshake = $/3
+	hud.flyingscore.yshake = $/3
 
 end)
 
@@ -956,7 +1040,10 @@ rawset(_G, "TakisDoShorts", function(p,me,takis)
 		//how convienient that 8 tics just so happens to be
 		//exactly 22 centiseconds!
 		and (tics == 8)
-			S_StartSound(nil,sfx_hapyhr,p)
+			if (p.happyhourscream
+			and p.happyhourscream.skin == me.skin)
+				S_StartSound(nil,p.happyhourscream.sfx,p)
+			end
 		end
 		
 		DoQuake(p,2*FU,1,0)
@@ -1263,12 +1350,21 @@ rawset(_G, "TakisCreateAfterimage", function(p,me)
 	
 	ghost.angle = p.drawangle
 	
+	/*
 	local color = P_RandomRange(1,#skincolors-1)
 	//keep rolling until we get an accessable color!
 	if skincolors[color].accessible == false
-		P_RandomRange(1,#skincolors-1)
+		color = P_RandomRange(1,#skincolors-1)
 	end
-	ghost.color = color
+	print("@@",color,#skincolors-1,#skincolors)
+	*/
+	
+	p.takistable.afterimagecolor = $+1
+	if (p.takistable.afterimagecolor > #skincolors-1)
+		p.takistable.afterimagecolor = 1
+	end
+	
+	ghost.color = p.takistable.afterimagecolor
 	ghost.takis_spritexscale,ghost.takis_spriteyscale = me.spritexscale, me.spriteyscale
 	ghost.takis_spritexoffset,ghost.takis_spriteyoffset = me.spritexoffset, me.spriteyoffset
 	ghost.takis_rollangle = me.rollangle
@@ -1284,8 +1380,8 @@ rawset(_G, "CreateWindRing", function(p,me)
 	local circle = P_SpawnMobjFromMobj(me, 0, 0, me.scale * 24, MT_WINDRINGLOL)
 	circle.angle = p.drawangle + ANGLE_90
 	circle.fuse = 14
-	circle.scale = FU / 3
-	circle.destscale = 10*FU
+	circle.scale = FixedMul(FU/3,me.scale)
+	circle.destscale = FixedMul(10*FU,me.scale)
 	circle.scalespeed = FU/10
 	circle.colorized = true
 	circle.color = SKINCOLOR_WHITE
@@ -2182,6 +2278,169 @@ rawset(_G,"TakisResetAliments", function(takis,which)
 	end
 end)
 
+local blerp0 = {
+	["ULTIMATE"] = 0,
+	["SHOTGUN"] = 0,
+	["HEART"] = 0,
+	["HEARTPIECE"] = 0,
+}
+local blerp1 = {
+	["ULTIMATE"] = 0,
+	["SHOTGUN"] = 0,
+	["HEART"] = 0,
+	["HEARTPIECE"] = 0,
+}
+
+rawset(_G,"TakisDrawBonuses", function(v, p, x, y, flags, salign, dist, angle)
+
+	local lerp = 0
+	if (p == displayplayer)
+		lerp = blerp0
+	else
+		lerp = blerp1
+	end
+	
+	local takis = p.takistable
+	local bonus = takis.bonuses
+	
+	local lerpx, lerpy = 0, 0
+	
+	local function DoShift(val, ang)
+		lerpx = $+P_ReturnThrustX(nil, ang, val)
+		lerpy = $+P_ReturnThrustY(nil, ang, val)
+	end
+	local function DoLerp(kind, retract, val)
+		if (p == displayplayer) then
+			if (retract)
+				blerp0[kind] = FixedLerp(blerp0[kind], 0, FU*60/100)
+			else
+				blerp0[kind] = FixedLerp(blerp0[kind], val, FU*60/100)
+			end
+		else
+			if (retract)
+				blerp1[kind] = FixedLerp(blerp1[kind], 0, FU*60/100)
+			else
+				blerp1[kind] = FixedLerp(blerp1[kind], val, FU*60/100)
+			end
+		end
+	end
+	
+	if bonus["shotgun"].tics
+		local trans = 0
+		if bonus["shotgun"].tics > 3*TR+9
+			trans = (bonus["shotgun"].tics-(3*TR+9))<<V_ALPHASHIFT
+		elseif bonus["shotgun"].tics < 10
+			trans = (10-bonus["shotgun"].tics)<<V_ALPHASHIFT
+		end
+		
+		v.drawString(x+lerpx, y+lerpy, 
+			"+"..bonus["shotgun"].score.." - "..bonus["shotgun"].text, 
+			flags|trans, salign
+		)
+		
+		bonus["shotgun"].tics = $-1
+		DoShift(lerp["SHOTGUN"], angle)
+		DoLerp("SHOTGUN", false, dist)
+	else
+		DoShift(lerp["SHOTGUN"], angle)
+		DoLerp("SHOTGUN", true, dist)
+	end
+	
+	if bonus["ultimatecombo"].tics
+		local trans = 0
+		if bonus["ultimatecombo"].tics > 3*TR+9
+			trans = (bonus["ultimatecombo"].tics-(3*TR+9))<<V_ALPHASHIFT
+		elseif bonus["ultimatecombo"].tics < 10
+			trans = (10-bonus["ultimatecombo"].tics)<<V_ALPHASHIFT
+		end
+		
+		v.drawString(x+lerpx, y+lerpy, 
+			"+"..bonus["ultimatecombo"].score.." - "..bonus["ultimatecombo"].text, 
+			flags|trans, salign
+		)
+		
+		bonus["ultimatecombo"].tics = $-1
+		DoShift(lerp["ULTIMATE"], angle)
+		DoLerp("ULTIMATE", false, dist)
+	else
+		DoShift(lerp["ULTIMATE"], angle)
+		DoLerp("ULTIMATE", true, dist)
+	end
+	
+	for k,val in ipairs(bonus.cards)
+		if val.tics
+			local trans = 0
+			if val.tics > TR+9
+				trans = (val.tics-(TR+9))<<V_ALPHASHIFT
+			elseif val.tics < 10
+				trans = (10-val.tics)<<V_ALPHASHIFT
+			end
+			
+			v.drawString(x+lerpx, y+lerpy, 
+				"+"..val.score.." - "..val.text, 
+				flags|trans, salign
+			)
+			
+			val.tics = $-1
+			DoShift(lerp["HEART"], angle)
+			DoLerp("HEART", false, dist)
+		else
+			DoShift(lerp["HEART"], angle)
+			DoLerp("HEART", true, dist)
+			table.remove(bonus.cards,k)
+		end
+		
+	end
+	for k,val in ipairs(bonus.cardpieces)
+		if val.tics
+			local trans = 0
+			if val.tics > TR+9
+				trans = (val.tics-(TR+9))<<V_ALPHASHIFT
+			elseif val.tics < 10
+				trans = (10-val.tics)<<V_ALPHASHIFT
+			end
+			
+			v.drawString(x+lerpx, y+lerpy, 
+				"+"..val.score.." - "..val.text, 
+				flags|trans, salign
+			)
+			
+			val.tics = $-1
+			DoShift(lerp["HEARTPIECE"], angle)
+			DoLerp("HEARTPIECE", false, dist)
+		else
+			DoShift(lerp["HEARTPIECE"], angle)
+			DoLerp("HEARTPIECE", true, dist)
+			table.remove(bonus.cardpieces,k)
+		end
+		
+	end
+	
+	/*
+	if bonus["heartcardpiece"].tics
+		local trans = 0
+		if bonus["heartcardpiece"].tics > TR+9
+			trans = (bonus["heartcardpiece"].tics-(TR+9))<<V_ALPHASHIFT
+		elseif bonus["heartcardpiece"].tics < 10
+			trans = (10-bonus["heartcardpiece"].tics)<<V_ALPHASHIFT
+		end
+		
+		v.drawString(x+lerpx, y+lerpy, 
+			"+"..bonus["heartcardpiece"].score.." - "..bonus["heartcardpiece"].text, 
+			flags|trans, salign
+		)
+		
+		bonus["heartcardpiece"].tics = $-1
+		DoShift(lerp["HEARTPIECE"], angle)
+		DoLerp("HEARTPIECE", false, dist)
+	else
+		DoShift(lerp["HEARTPIECE"], angle)
+		DoLerp("HEARTPIECE", true, dist)
+	end
+	*/
+	
+end)
+
 //i hope you dont mind if i copy this jisk
 rawset(_G, "GetInternalFontWidth", function(str, font)
 
@@ -2600,7 +2859,9 @@ rawset(_G,"TakisMenuThinker",function(p)
 		customhud.enable("lives")
 		menu.menuinaction = false
 		takis.HUD.showingletter = false
-		P_RestoreMusic(p)
+		if not (takis.shotgunned)
+			P_RestoreMusic(p)
+		end
 		p.pflags = $ &~PF_FORCESTRAFE		
 		return
 	end
@@ -2767,6 +3028,7 @@ end)
 local musdefaults = {
 	["letter"] = "_chsel",
 	["_conga"] = "_chsel",
+	["war"] = "vsbrak"
 }
 
 rawset(_G, "ChangeTakisMusic",function(mus,looping,p)
