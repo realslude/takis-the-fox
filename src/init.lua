@@ -31,8 +31,8 @@ end
 
 
 
-rawset(_G, "TAKIS_BUILDTIME", "1:23:31 PM")
-rawset(_G, "TAKIS_BUILDDATE", "9/17/2023")
+//rawset(_G, "TAKIS_BUILDTIME", "9:44:31 PM")
+//rawset(_G, "TAKIS_BUILDDATE", "9/26/2023")
 
 
 
@@ -67,15 +67,19 @@ end
 rawset(_G, "takis_printdebuginfo",function(p)
 	if not p
 		print("\x82".."Extra Debug Stuff:\n"..
+			/*
 			"\x8D".."Build Date (MM/DD/YYYY) = \x80"..TAKIS_BUILDDATE.."\n"..
 			"\x8D".."Build Time = \x80"..TAKIS_BUILDTIME.."\n"..
+			*/
 			"\x8D".."# of files done = \x80"..filesdone.."/"..NUMFILES.."\n"
 			
 		)	
 	else
 		CONS_Printf(p,"\x82".."Extra Debug Stuff:\n"..
+			/*
 			"\x8D".."Build Date (MM/DD/YYYY) = \x80"..TAKIS_BUILDDATE.."\n"..
 			"\x8D".."Build Time = \x80"..TAKIS_BUILDTIME.."\n"..
+			*/
 			"\x8D".."# of files done = \x80"..filesdone.."/"..NUMFILES.."\n"..
 			
 			"\n".."\x8D".."Used a Player for this".."\n"
@@ -85,14 +89,13 @@ end)
 
 rawset(_G, "takis_printwarning",function(p)
 	if not p
-		print("\x86".."If you're hosting this and you're not Zyphyr...\n"..
-			"\x85".."STOP HOSTING THIS!! This is an INDEV addon made by luigi budd.\n"..
-			"If I find you hosting this WITHOUT my permission, I WILL find you!"
+		print("\x82This is free for anyone to host!\n"..
+			"Please send feedback and bug reports to \x83luigibudd\x82 on Discord!"
+			
 		)	
 	else
-		CONS_Printf(p,"\x86".."If you're hosting this and you're not Zyphyr...\n"..
-			"\x85".."STOP HOSTING THIS!! This is an INDEV addon made by luigi budd.\n"..
-			"If I find you hosting this WITHOUT my permission, I WILL find you!"
+		CONS_Printf(p,"\x82This is free for anyone to host!\n"..
+			"Please send feedback and bug reports to \x83luigibudd\x82 on Discord!"
 		)	
 	end
 	

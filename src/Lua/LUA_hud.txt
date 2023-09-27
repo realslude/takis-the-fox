@@ -1705,7 +1705,7 @@ local function drawtauntmenu(v,p)
 	v.drawString(15*FU,(75*FU)+yadd,"Taunt",V_ALLOWLOWERCASE|V_HUDTRANS,"fixed")
 	v.drawString(305*FU,(75*FU)+yadd,"Hit C1 to Cancel",V_ALLOWLOWERCASE|V_HUDTRANS,"thin-fixed-right")
 	v.drawString(15*FU,(90*FU)+yadd,"Hit C3 to join a Partner Taunt",V_ALLOWLOWERCASE|V_HUDTRANS,"thin-fixed")
-	v.drawString(305*FU,(86*FU)+yadd,"Hold TF+C2/C3 to set Quick Taunt",V_ALLOWLOWERCASE|V_HUDTRANS,"small-fixed-right")
+	v.drawString(305*FU,(86*FU)+yadd,"Quick Taunt: TF+C2/C3+#",V_ALLOWLOWERCASE|V_HUDTRANS,"small-fixed-right")
 	v.drawString(305*FU,(94*FU)+yadd,"Press FIRE to delete Quick Taunt",V_ALLOWLOWERCASE|V_HUDTRANS,"small-fixed-right")
 	v.drawScaled(160*FU,100*FU+yadd,FU/2,v.cachePatch("TAUNTSEPAR"),0,nil)
 	

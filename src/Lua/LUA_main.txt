@@ -1100,7 +1100,7 @@ addHook("PlayerThink", function(p)
 								elseif (found.type == MT_PLAYER)
 									if CanPlayerHurtPlayer(p,found.player)
 										TakisAddHurtMsg(found.player,HURTMSG_HAMMERQUAKE)
-										P_DamageMobj(found,me,me)
+										P_DamageMobj(found,me,me,abs(me.momz/FU/4))
 									end
 									DoQuake(found.player,
 										FixedMul(
@@ -1223,9 +1223,12 @@ addHook("PlayerThink", function(p)
 					and (takis.accspeed >= 45*FU)
 						local d1 = P_SpawnMobjFromMobj(me, -20*cos(p.drawangle + ANGLE_45), -20*sin(p.drawangle + ANGLE_45), 0, MT_TAKIS_CLUTCHDUST)
 						local d2 = P_SpawnMobjFromMobj(me, -20*cos(p.drawangle - ANGLE_45), -20*sin(p.drawangle - ANGLE_45), 0, MT_TAKIS_CLUTCHDUST)
-						d1.scale = 3*$/2
+						d1.scale = $*2
+						d1.destscale = FU/10
 						d1.angle = R_PointToAngle2(me.x+me.momx, me.y+me.momy, d1.x, d1.y) --- ANG5
-						d2.scale = 3*$/2
+
+						d2.scale = $*2
+						d2.destscale = FU/10
 						d2.angle = R_PointToAngle2(me.x+me.momx, me.y+me.momy, d2.x, d2.y) --+ ANG5
 					end
 				end
@@ -2124,7 +2127,7 @@ addHook("MobjDamage", function(mo,inf,sor,_,dmgt)
 	or ((mo.player.takistable.heartcards == 0) and (mo.player.rings)))
 		S_StartSound(me,sfx_smack)
 		S_StartAntonOw(mo)
-		DoQuake(mo.player,30*FU,15)
+		DoQuake(mo.player,30*FU*(max(1,mo.player.timeshit*2/3)),15)
 	end
 
 	if mo.player.powers[pw_carry] == CR_NIGHTSMODE
@@ -2288,7 +2291,7 @@ local function knockbacklolll(t,tm)
 							stopmom(takis,me,ang)
 							
 							TakisAddHurtMsg(tm.player,HURTMSG_CLUTCH)
-							P_DamageMobj(tm,t,t)
+							P_DamageMobj(tm,t,t,4)
 							
 							local bam = P_SpawnMobjFromMobj(tm,0,0,0,MT_TNTDUST)
 							bam.state = mobjinfo[MT_MINECART].deathstate  
@@ -2311,7 +2314,7 @@ local function knockbacklolll(t,tm)
 							stopmom(takis,me,ang)
 							
 							TakisAddHurtMsg(tm.player,HURTMSG_CLUTCH)
-							P_DamageMobj(tm,t,t)
+							P_DamageMobj(tm,t,t,4)
 							
 							local bam = P_SpawnMobjFromMobj(tm,0,0,0,MT_TNTDUST)
 							bam.state = mobjinfo[MT_MINECART].deathstate  
@@ -2334,7 +2337,7 @@ local function knockbacklolll(t,tm)
 						stopmom(takis,me,ang)
 						
 						TakisAddHurtMsg(tm.player,HURTMSG_CLUTCH)
-						P_DamageMobj(tm,t,t)
+						P_DamageMobj(tm,t,t,4)
 						
 						local bam = P_SpawnMobjFromMobj(tm,0,0,0,MT_TNTDUST)
 						bam.state = mobjinfo[MT_MINECART].deathstate  
@@ -2366,7 +2369,7 @@ local function knockbacklolll(t,tm)
 						S_StartSound(t,sfx_bsnipe)
 						
 						TakisAddHurtMsg(tm.player,HURTMSG_CLUTCH)
-						P_KillMobj(tm,t,t)
+						P_KillMobj(tm,t,t,4)
 						
 						LaunchTargetFromInflictor(1,t,tm,63*t.scale,takis.accspeed/5)
 						P_MovePlayer(tm.player)
@@ -2384,7 +2387,7 @@ local function knockbacklolll(t,tm)
 						S_StartSound(t,sfx_bsnipe)
 						
 						TakisAddHurtMsg(tm.player,HURTMSG_CLUTCH)
-						P_KillMobj(tm,t,t)
+						P_KillMobj(tm,t,t,4)
 						
 						LaunchTargetFromInflictor(1,t,tm,63*t.scale,takis.accspeed/5)
 						P_MovePlayer(tm.player)
@@ -2453,7 +2456,7 @@ addHook("ShouldDamage", function(mo,inf,sor,dmg,dmgt)
 		if mo.player.takistable.heartcards ~= 0
 			if mo.player.powers[pw_flashing] == 0
 				TakisHealPlayer(mo.player,mo,mo.player.takistable,3)
-				DoQuake(mo.player,30*FU,15)
+				DoQuake(mo.player,30*FU*(max(1,mo.player.timeshit*2/3)),15)
 				mo.player.timeshit  = $+1
 				S_StartSound(me,sfx_smack)
 				S_StartAntonOw(mo)
@@ -2535,7 +2538,7 @@ local function hammerhitbox(t,tm)
 		
 		if CanPlayerHurtPlayer(t.parent.player,tm.player)
 			TakisAddHurtMsg(tm.player,HURTMSG_HAMMERBOX)
-			P_DamageMobj(tm,t,t.parent)
+			P_DamageMobj(tm,t,t.parent,5)
 		end
 	else
 		
@@ -2952,7 +2955,7 @@ addHook("MobjMoveCollide",function(tm,t)
 		and L_ZCollide(t,tm)
 			if CanPlayerHurtPlayer(p,t.player)
 				TakisAddHurtMsg(t.player,HURTMSG_SLIDE)
-				P_DamageMobj(t,tm,tm)
+				P_DamageMobj(t,tm,tm,10)
 				LaunchTargetFromInflictor(1,t,tm,63*tm.scale,takis.accspeed/5)
 				P_Thrust(tm,p.drawangle,5*tm.scale)
 				P_SetObjectMomZ(t,P_RandomRange(5,15)*tm.scale,true)

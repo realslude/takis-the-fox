@@ -1545,6 +1545,13 @@ rawset(_G, "CanPlayerHurtPlayer", function(p1,p2,nobs)
 			end
 		elseif (gametyperules & (GTR_FRIENDLYFIRE|GTR_RINGSLINGER))
 		or ((ff) and (p1.ctfteam == p2.ctfteam))
+			if (p1.vshteam)
+			and (p2.vshteam)
+				if (p1.vshteam == p2.vshteam)
+					return false
+				end
+			end
+			
 			return true
 		end
 		
