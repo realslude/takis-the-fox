@@ -29,13 +29,7 @@ if (VERSION == 202) and (SUBVERSION < 12)
 	return
 end
 
-
-
-//rawset(_G, "TAKIS_BUILDTIME", "9:44:31 PM")
-//rawset(_G, "TAKIS_BUILDDATE", "9/26/2023")
-
-
-
+//file tree
 local guh = {
 	"init",
 }
@@ -55,6 +49,7 @@ local filelist = {
 	"misc",
 	"MOTD",
 }
+//
 
 rawset(_G, "filesdone", 0)
 rawset(_G, "NUMFILES", (#guh)+(#filelistt1)+(#filelist) )
@@ -90,12 +85,12 @@ end)
 rawset(_G, "takis_printwarning",function(p)
 	if not p
 		print("\x82This is free for anyone to host!\n"..
-			"Please send feedback and bug reports to \x83luigibudd\x82 on Discord!"
+			"Please send feedback and bug reports to \x83luigibudd\x82 on Discord, or the Github!\nhttps://github.com/luigi-budd/takis-the-fox"
 			
 		)	
 	else
 		CONS_Printf(p,"\x82This is free for anyone to host!\n"..
-			"Please send feedback and bug reports to \x83luigibudd\x82 on Discord!"
+			"Please send feedback and bug reports to \x83luigibudd\x82 on Discord, or the Github!\nhttps://github.com/luigi-budd/takis-the-fox"
 		)	
 	end
 	
@@ -118,10 +113,6 @@ end
 for k,v in ipairs(filelist)
 	dofile2(pre..v)
 end
-
-//!?!?
-//filesdone = $-1
-
 
 print("Did init.lua\n")
 

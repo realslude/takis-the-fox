@@ -1014,7 +1014,10 @@ local function drawcombostuff(v,p)
 				FU/3,
 				verypatch,
 				V_HUDTRANS|V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER,
-				v.getColormap(nil, color)
+				v.getColormap(nil, 
+					//(40+(i) % #skincolors-1)+1
+					color
+				)
 			)
 			
 		end
@@ -2359,10 +2362,10 @@ addHook("HUD", function(v,p)
 				drawtimer(v,p)
 				drawlivesarea(v,p)
 				drawcombostuff(v,p)
-				drawscore(v,p)
 				drawbonuses(v,p)
 				drawaliments(v,p)
 				drawheartcards(v,p)
+				drawscore(v,p)
 				drawface(v,p)
 				drawtauntmenu(v,p)
 				drawpizzatips(v,p)

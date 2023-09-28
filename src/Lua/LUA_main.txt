@@ -1244,6 +1244,7 @@ addHook("PlayerThink", function(p)
 				
 				if not (p.pflags & PF_SPINNING)
 				and not (takis.glowyeffects)
+				and not (takis.clutchingtime % 2)
 					TakisCreateAfterimage(p,me)
 				end
 				

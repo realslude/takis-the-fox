@@ -1,4 +1,5 @@
 rawset(_G, "TAKIS_INVITELINK", 'discord.gg/JY6ukFuQJV')
+rawset(_G, "TAKIS_INVITELINK2", 'https://github.com/luigi-budd/takis-the-fox')
 
 addHook("PlayerSpawn", function(p)
 	if p.discord == nil then
@@ -13,6 +14,7 @@ hud.add(function(v, p)
 	
 	if p.discord == true
 		v.drawString(160, 0, TAKIS_INVITELINK,V_SNAPTOTOP|V_ALLOWLOWERCASE|V_30TRANS, "thin-center")
+		v.drawString(160, 8, TAKIS_INVITELINK2,V_SNAPTOTOP|V_ALLOWLOWERCASE|V_30TRANS, "thin-center")
 	end
 end)
 
