@@ -595,7 +595,7 @@ COM_AddCommand("takis_setdebug", function(p,arg)
 	end
 	
 	arg = tonumber(arg)
-	TAKIS_DEBUGFLAG = arg
+	TAKIS_DEBUGFLAG = arg or 0
 
 end,COM_ADMIN)
 

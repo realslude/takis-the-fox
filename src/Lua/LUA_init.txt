@@ -24,6 +24,7 @@ rawset(_G, "TAKIS_DEBUGFLAG", 0)
 local dbgflags = {
 	"BUTTONS",
 	"PAIN",
+	"ACH",
 }
 for k,v in ipairs(dbgflags)
 	rawset(_G,"DEBUG_"..v,1<<(k-1))
@@ -1051,7 +1052,6 @@ mobjinfo[MT_TAKIS_SHOTGUN_HITBOX] = {
 
 addHook("NetVars",function(n)
 	TAKIS_NET = n($)
-	TAKIS_MAX_HEARTCARDS = n($)
 	TAKIS_MAX_HEARTCARDS = n($)
 	TAKIS_MENU = n($)
 end)

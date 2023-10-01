@@ -329,7 +329,7 @@ addHook("MobjThinker", function(rag)
 	end
 end, MT_TAKIS_BADNIK_RAGDOLL)
 
-addHook("MobjCollide",function(t,tm)
+addHook("MobjMoveCollide",function(tm,t)
 	if not L_ZCollide(tm,t)
 		return
 	end
@@ -376,7 +376,7 @@ addHook("MobjCollide",function(t,tm)
 				S_StartSound(ragdoll,sfx_takoww)
 			end
 
-			//P_KillMobj(t,tm,tm.tracer)
+			P_KillMobj(t,tm,tm.tracer)
 		else
 			
 			//crit

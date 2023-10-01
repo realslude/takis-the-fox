@@ -107,7 +107,6 @@ end
 
 for k,v in ipairs(filelistt1)
 	dofile2("libs/".. pre..v)
-	dofile2("libs/".. pre..v)
 end
 
 for k,v in ipairs(filelist)

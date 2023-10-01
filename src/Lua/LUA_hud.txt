@@ -2115,6 +2115,19 @@ local function drawdebug(v,p)
 		drawflag(v,160,130,"FakePain",V_HUDTRANS|V_PERPLAYER|V_ALLOWLOWERCASE,V_GREENMAP,V_REDMAP,"thin",(takis.inFakePain))
 		drawflag(v,160,138,"WaterSlide",V_HUDTRANS|V_PERPLAYER|V_ALLOWLOWERCASE,V_GREENMAP,V_REDMAP,"thin",(takis.inwaterslide))
 	end
+	if (TAKIS_DEBUGFLAG & DEBUG_ACH)
+		for k,va in ipairs(takis.HUD.steam)
+			if va == nil
+				continue
+			end
+			
+			local t = TAKIS_ACHIEVEMENTINFO
+			v.drawString(165,k*8,t[va.enum].name,
+				V_ALLOWLOWERCASE|V_HUDTRANS,V_SNAPTOTOP,
+				"thin"
+			)
+		end	
+	end
 	
 end
 
