@@ -2123,7 +2123,7 @@ local function drawdebug(v,p)
 			
 			local t = TAKIS_ACHIEVEMENTINFO
 			v.drawString(165,k*8,t[va.enum].name,
-				V_ALLOWLOWERCASE|V_HUDTRANS,V_SNAPTOTOP,
+				V_ALLOWLOWERCASE|V_HUDTRANS|V_SNAPTOTOP,
 				"thin"
 			)
 		end	
