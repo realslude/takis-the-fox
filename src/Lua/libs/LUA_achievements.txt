@@ -1,18 +1,23 @@
-rawset(_G,"ACHIEVEMENT_COMBO",1<<0)
-rawset(_G,"ACHIEVEMENT_BANANA",1<<1)
-rawset(_G,"ACHIEVEMENT_RAKIS",1<<2)
-rawset(_G,"ACHIEVEMENT_PARTYPOOPER",1<<3)
-rawset(_G,"ACHIEVEMENT_TAKISFEST",1<<4)
-rawset(_G,"ACHIEVEMENT_HOMERUN",1<<5)
-rawset(_G,"ACHIEVEMENT_HEATSTROKE",1<<6)
-rawset(_G,"ACHIEVEMENT_FULLCOMBO",1<<7)
-rawset(_G,"ACHIEVEMENT_JUMPSCARE",1<<8)
-rawset(_G,"ACHIEVEMENT_HARDCORE",1<<9)
-rawset(_G,"ACHIEVEMENT_CLUTCHSPAM",1<<10)
-rawset(_G,"ACHIEVEMENT_ARIDCORE",1<<11)
-rawset(_G,"ACHIEVEMENT_COMBOCLOSE",1<<12)
-rawset(_G,"ACHIEVEMENT_COMBOALMOST",1<<13)
-rawset(_G,"NUMACHIEVEMENTS",14)
+local achs = {
+	"COMBO",
+	"BANANA",
+	"RAKIS",
+	"PARTYPOOPER",
+	"TAKISFEST",
+	"HOMERUN",
+	"FULLCOMBO",
+	"JUMPSCARE",
+	"HARDCORE",
+	"CLUTCHSPAM",
+	"COMBOCLOSE",
+	"COMBOALMOST",
+}
+for k,v in ipairs(achs)
+	rawset(_G,"ACHIEVEMENT_"..string.upper(v),1<<(k-1))
+	print("Rawset Ach. ACHIEVEMENT_"..string.upper(v).." with val "..1<<(k-1))
+end
+
+rawset(_G,"NUMACHIEVEMENTS",#achs)
 
 rawset(_G,"ACHIEVEMENT_PATH","client/coolswag.dat")
 
@@ -53,12 +58,6 @@ rawset(_G,"TAKIS_ACHIEVEMENTINFO",{
 		scale = FU/4,
 		text = "Hit someone with a Homerun\n".."bat."
 	},
-	[ACHIEVEMENT_HEATSTROKE] = {
-		name = "Heatstroked",
-		icon = "ACH_HEATSTROKE",
-		scale = FU/4,
-		text = "Die to Sunstroke."
-	},
 	[ACHIEVEMENT_FULLCOMBO] = {
 		name = "Full Combo",
 		icon = "ACH_FULLCOMBO",
@@ -82,12 +81,6 @@ rawset(_G,"TAKIS_ACHIEVEMENTINFO",{
 		icon = "ACH_CLUTCHSPAM",
 		scale = FU/4,
 		text = "Never learn how to Clutch\nproperly."
-	},
-	[ACHIEVEMENT_ARIDCORE] = {
-		name = "Texas Day",
-		icon = "ACH_PLACEHOLDER",
-		scale = FU/4,
-		text = "Beat a Hot level with no\n".."Cards and with Sunstroke."
 	},
 	[ACHIEVEMENT_COMBOCLOSE] = {
 		name = "Close Call!",

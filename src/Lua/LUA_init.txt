@@ -112,12 +112,6 @@ rawset(_G, "TAKIS_NET", {
 	inbossmap = false,
 	isretro = 0,
 	
-	texasarea = false,
-	donotsunstroke = false,
-	
-	icyarea = false,
-	donotfreeze = false,
-	
 	livescount = 0,
 	usesheartcards = true,
 	
@@ -1058,7 +1052,6 @@ mobjinfo[MT_TAKIS_SHOTGUN_HITBOX] = {
 addHook("NetVars",function(n)
 	TAKIS_NET = n($)
 	TAKIS_MAX_HEARTCARDS = n($)
-	TAKIS_SHADE_BRIGHTNESS = n($)
 	TAKIS_MAX_HEARTCARDS = n($)
 	TAKIS_MENU = n($)
 end)

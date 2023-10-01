@@ -1224,11 +1224,11 @@ addHook("PlayerThink", function(p)
 					and (takis.accspeed >= 45*FU)
 						local d1 = P_SpawnMobjFromMobj(me, -20*cos(p.drawangle + ANGLE_45), -20*sin(p.drawangle + ANGLE_45), 0, MT_TAKIS_CLUTCHDUST)
 						local d2 = P_SpawnMobjFromMobj(me, -20*cos(p.drawangle - ANGLE_45), -20*sin(p.drawangle - ANGLE_45), 0, MT_TAKIS_CLUTCHDUST)
-						d1.scale = $*2
+						d1.scale = $*2/3
 						d1.destscale = FU/10
 						d1.angle = R_PointToAngle2(me.x+me.momx, me.y+me.momy, d1.x, d1.y) --- ANG5
 
-						d2.scale = $*2
+						d2.scale = $*2/3
 						d2.destscale = FU/10
 						d2.angle = R_PointToAngle2(me.x+me.momx, me.y+me.momy, d2.x, d2.y) --+ ANG5
 					end
@@ -1615,10 +1615,6 @@ addHook("PlayerThink", function(p)
 						and (takis.heartcardpieces == 0))
 						and (TAKIS_NET.usesheartcards))
 							TakisAwardAchievement(p,ACHIEVEMENT_HARDCORE)
-							if (TAKIS_NET.texasarea and not TAKIS_NET.donotsunstroke)
-							and (takis.lastsunstroke)
-								TakisAwardAchievement(p,ACHIEVEMENT_ARIDCORE)
-							end
 						end
 						
 						if takis.shotgunned
