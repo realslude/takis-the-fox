@@ -23,6 +23,7 @@ rawset(_G, "TAKIS_ISDEBUG", true)
 rawset(_G, "TAKIS_DEBUGFLAG", 0)
 local dbgflags = {
 	"BUTTONS",
+	"PAIN",
 }
 for k,v in ipairs(dbgflags)
 	rawset(_G,"DEBUG_"..v,1<<(k-1))
@@ -79,11 +80,6 @@ rawset(_G, "TAKIS_COMBO_RANKS", {
 	pnk.."Lovely!",
 })
 rawset(_G, "TAKIS_COMBO_UP", 5)
-rawset(_G, "TAKIS_MAX_SUNSTROKE", 8*TR)
-rawset(_G, "TAKIS_MAX_ICETIME", 10*TR)
-rawset(_G, "TAKIS_MAX_ICECOUNT", 60*TR)
-rawset(_G, "TAKIS_MAX_UNFREEZE", 2*TR)
-rawset(_G, "TAKIS_SHADE_BRIGHTNESS", 200)
 rawset(_G, "TAKIS_HAPPYHOURFONT", "TAHRF")
 rawset(_G, "TAKIS_TITLETIME", 0)
 rawset(_G, "TAKIS_TITLEFUNNY", 0)
@@ -201,9 +197,10 @@ rawset(_G, "TakisInitTable", function(p)
 		goingfast = false,
 		wentfast = 0,
 		sweat = 0,
-		inshade = false,
 		body = 0,
 		stoprolling = false,
+		//the only "InX" variable thats all lowercase 
+		//(and not with the bools)
 		inwaterslide = false,
 		glowyeffects = 0,
 		sethappyend = false,
@@ -223,13 +220,13 @@ rawset(_G, "TakisInitTable", function(p)
 		thingsdestroyed = 0,
 		lastdestroyed = 0,
 		fchelper = false,
-		lastsunstroke = false,
 		achfile = 0,
 		drilleffect = 0,
 		issuperman = false,
 		attracttarg = nil,
 		afterimagecolor = 1,
 		dustspawnwait = 0,
+		timetouchingground = 0,
 		
 		taunttime = 0,
 		tauntid = 0,
@@ -294,15 +291,6 @@ rawset(_G, "TakisInitTable", function(p)
 			windowstyle = 'win10', //for cosmenu, all lowercase
 			additiveai = 0,
 			ihavemusicwad = 0, //samus-like check for music stuff
-		},
-		aliments = {
-			sunstroked = false,
-			sunstrokecount = 0,
-			
-			iced = false,
-			icecount = 0,
-			timetoice = 0,
-			iceremove = 0,
 		},
 		//tf2 taunt menu lol
 		//up to 7 taunts, detected with BT_WEAPONMASK
@@ -413,6 +401,7 @@ rawset(_G, "TakisInitTable", function(p)
 		onPosZ = false,
 		isElevated = false,
 		inNIGHTSMode = false,
+		justHitFloor = false,
 		
 		//fake powers
 		fakeflashing = 0,
@@ -920,9 +909,9 @@ freeslot("S_TAKIS_CLUTCHDUST")
 states[S_TAKIS_CLUTCHDUST] = {
 	sprite = SPR_CDST,
 	frame = A|FF_PAPERSPRITE|FF_ANIMATE,
-	var1 = 10,
+	var1 = 6,
 	var2 = 2,
-	tics = 10*2,
+	tics = 6*2,
 }
 
 freeslot("S_TAKIS_DRILLEFFECT")

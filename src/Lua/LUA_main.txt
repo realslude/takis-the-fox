@@ -19,10 +19,10 @@
 	-[done]also make speedpad sectors keep momentum
 	-[done]reuse soap code for ptje ranks
 	-death anims
-	-wall bonk lol
+	-[scrapped]wall bonk lol
 	-add bot stuff
 	-[done]happy hour for other skins?
-	-fc stuff?
+	-[done]fc stuff?
 	-[done]custom arma to bbreak more stuff (like spikes)
 	-[done]PASSWORD!!!
 	-[done]make recov jump not rely on flashing
@@ -80,6 +80,7 @@
 	-maybe give all hud elements V_PERPLAYER??
 	-[done]fix the clutch being slow with smaller scales
 	-MORE EFFECTS!!
+	-placements in drawscore?
 	
 	Dear Pesky Plumbers,
 
@@ -344,9 +345,7 @@ addHook("PlayerThink", function(p)
 						//xmom code
 						local d1 = P_SpawnMobjFromMobj(me, -20*cos(p.drawangle + ANGLE_45), -20*sin(p.drawangle + ANGLE_45), 0, MT_TAKIS_CLUTCHDUST)
 						local d2 = P_SpawnMobjFromMobj(me, -20*cos(p.drawangle - ANGLE_45), -20*sin(p.drawangle - ANGLE_45), 0, MT_TAKIS_CLUTCHDUST)
-						d1.scale = $*2
 						d1.angle = R_PointToAngle2(me.x+me.momx, me.y+me.momy, d1.x, d1.y) --- ANG5
-						d2.scale = $*2
 						d2.angle = R_PointToAngle2(me.x+me.momx, me.y+me.momy, d2.x, d2.y) --+ ANG5
 						
 						if takis.accspeed < skins[TAKIS_SKIN].runspeed
@@ -479,8 +478,9 @@ addHook("PlayerThink", function(p)
 				
 					//dash thing
 					if takis.c1
-					and	takis.onGround 
-					
+						if takis.onGround
+							takis.dashtime = $+1
+						end
 					end
 				end
 				
@@ -724,6 +724,7 @@ addHook("PlayerThink", function(p)
 				and (p.realtime > 0)
 				and me.health
 				and not ((takis.tauntmenu.open) and (takis.tossflag))
+				and not (takis.inwaterslide)
 					S_StartSound(me,sfx_eeugh)
 					S_StartSound(me,sfx_taksld)
 					P_InstaThrust(me,p.drawangle,20*FU+FixedMul(3*takis.accspeed/5,me.scale))
@@ -1279,7 +1280,9 @@ addHook("PlayerThink", function(p)
 				if takis.inFakePain
 					takis.fakeflashing = 4*flashingtics/5
 				end
-				takis.inFakePain = false
+				if not (takis.justHitFloor)
+					takis.inFakePain = false
+				end
 				
 				if not P_CheckDeathPitCollide(me)
 					takis.timesdeathpitted = 0
@@ -1334,7 +1337,7 @@ addHook("PlayerThink", function(p)
 				else
 					takis.steppedthisframe = false
 				end
-				if me.eflags & MFE_JUSTHITFLOOR
+				if takis.justHitFloor
 				and not (me.eflags & (MFE_TOUCHWATER|MFE_TOUCHLAVA))
 				and not P_CheckDeathPitCollide(me)
 				and me.health
@@ -1446,7 +1449,6 @@ addHook("PlayerThink", function(p)
 					P_MoveOrigin(takis.body,me.x,me.y,me.z)
 				end
 				
-				TakisResetAliments(takis)
 				takis.wentfast = 0
 				
 				//death thinker and anims are called in 
@@ -1808,7 +1810,6 @@ addHook("PlayerThink", function(p)
 			takis.lastmomz = me.momz
 			//these are stupid
 			takis.lastskincolor = p.skincolor
-			takis.lastsunstroke = takis.aliments.sunstroked
 		else
 		
 			if not takis.otherskin
@@ -1935,7 +1936,6 @@ addHook("PlayerSpawn", function(p)
 		takis.combo.time = 0
 		
 		takis.wentfast = 0
-		TakisResetAliments(takis)
 		
 		if ((takis.body) and (takis.body.valid))
 			P_KillMobj(takis.body)
@@ -2126,7 +2126,7 @@ addHook("MobjDamage", function(mo,inf,sor,_,dmgt)
 	if mo.health
 	or ((mo.player.takistable.heartcards)
 	or ((mo.player.takistable.heartcards == 0) and (mo.player.rings)))
-		S_StartSound(me,sfx_smack)
+		S_StartSound(mo,sfx_smack)
 		S_StartAntonOw(mo)
 		DoQuake(mo.player,30*FU*(max(1,mo.player.timeshit*2/3)),15)
 	end
@@ -2138,10 +2138,6 @@ addHook("MobjDamage", function(mo,inf,sor,_,dmgt)
 	if (mo.player.powers[pw_shield] == SH_ARMAGEDDON)
 		TakisPowerfulArma(mo.player)
 		
-	end
-	
-	if dmgt == DMG_FIRE
-		TakisResetAliments(mo.player.takistable,"freezing")
 	end
 	
 	//combo penalty
@@ -2459,7 +2455,7 @@ addHook("ShouldDamage", function(mo,inf,sor,dmg,dmgt)
 				TakisHealPlayer(mo.player,mo,mo.player.takistable,3)
 				DoQuake(mo.player,30*FU*(max(1,mo.player.timeshit*2/3)),15)
 				mo.player.timeshit  = $+1
-				S_StartSound(me,sfx_smack)
+				S_StartSound(mo,sfx_smack)
 				S_StartAntonOw(mo)
 			end
 			if (mo.player.timeshit == 1)
@@ -2554,12 +2550,12 @@ local function hammerhitbox(t,tm)
 		end
 		
 		if tm.flags & MF_SPRING
-			P_DoSpring(tm,t.parent)
-			t.parent.player.takistable.hammerblastdown = 0
-			if ((mobjinfo[tm.type].mass == 0) and (mobjinfo[tm.type].damage > 0))
-				t.parent.momz = 0
+			local z = tm.z
+			if (P_MobjFlip(tm) == -1)
+				z = tm.z+tm.height
 			end
-			P_RemoveMobj(t)
+			P_MoveOrigin(t.parent,tm.x,tm.y,z)
+			TakisResetHammerTime(t.parent.player)
 			return
 		end
 		
@@ -2895,6 +2891,11 @@ end)
 //this should be used as the main movecollide hook from now on
 addHook("MobjMoveCollide",function(tm,t)
 	if not (tm.player or ((t) and (t.valid)))
+		return
+	end
+	
+	//erm, again?
+	if not (t and t.valid)
 		return
 	end
 	

@@ -9,6 +9,7 @@ end)
 
 hud.add(function(v, p)
 	if not netgame
+	or not TAKIS_ISDEBUG
 		return
 	end
 	

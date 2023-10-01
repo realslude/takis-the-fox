@@ -5,6 +5,7 @@ tm.entries = {
 	[0] = {
 		title = "Takis Help",
 		color = SKINCOLOR_CLOUDY,
+		curcolor = SKINCOLOR_SUPERGOLD4,
 		icon = "MISSING",
 		text = {
 			"Menu Help",
@@ -21,12 +22,14 @@ tm.entries = {
 	[1] = {
 		title = "Achievements",
 		color = SKINCOLOR_CARBON,
+		nocursor = true,
 		icon = "MISSING",
 		text = {},
 	},
 	[2] = {
 		title = "Takis Options",
 		color = SKINCOLOR_CLOUDY,
+		curcolor = SKINCOLOR_SUPERGOLD4,
 		icon = "MISSING",
 		text = {
 			"No Strafe",
@@ -66,6 +69,7 @@ tm.entries = {
 	[3] = {
 		title = "I/O Stuff",
 		color = SKINCOLOR_CLOUDY,
+		curcolor = SKINCOLOR_SUPERGOLD4,
 		icon = "MISSING",
 		text = {
 			"Save Config",

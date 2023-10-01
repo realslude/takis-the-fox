@@ -14,7 +14,7 @@ rawset(_G,"ACHIEVEMENT_COMBOCLOSE",1<<12)
 rawset(_G,"ACHIEVEMENT_COMBOALMOST",1<<13)
 rawset(_G,"NUMACHIEVEMENTS",14)
 
-rawset(_G,"ACHIEVEMENT_PATH","client/takisthefox/coolswag.dat")
+rawset(_G,"ACHIEVEMENT_PATH","client/coolswag.dat")
 
 rawset(_G,"TAKIS_ACHIEVEMENTINFO",{
 	[ACHIEVEMENT_COMBO] = {

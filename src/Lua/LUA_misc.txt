@@ -9,172 +9,6 @@ local function L_ZCollide(mo1,mo2)
 	if mo2.z > mo1.height+mo1.z then return false end
 	return true
 end
-
--- stuff for netvars
-//TehRealSalt is sooooo cool for making e102 gamma reusable!!
-//using Gamma.IsCowboyMap from definitions, modified for takis
-local function isTexas(map)
-	if (mapheaderinfo[map] == nil)
-		return false;
-	end
-	
-	if (string.lower(mapheaderinfo[map].lvlttl) == "arid canyon")
-	and (mapheaderinfo[map].actnum ~= 1)
-		TAKIS_NET.donotsunstroke = true
-	end
-	
-	if (mapheaderinfo[map].typeoflevel & TOL_NIGHTS)
-		TAKIS_NET.donotsunstroke = true
-	end
-	
-	if (mapheaderinfo[map].takis_donotsunstroke)
-		TAKIS_NET.donotsunstroke = true
-	end
-
-	if tonumber(mapheaderinfo[map].takis_shadebrightness)
-		TAKIS_SHADE_BRIGHTNESS = tonumber(mapheaderinfo[map].takis_shadebrightness)
-	else
-		TAKIS_SHADE_BRIGHTNESS = 200
-	end
-	
-	if (mapheaderinfo[map].takis_ishotarea)
-		return true;
-	end
-		
-	if (mapheaderinfo[map].skynum >= 13
-	and mapheaderinfo[map].skynum <= 16)
-		// ACZ sky textures
-		return true;
-	end
-
-	if (mapheaderinfo[map].musname == "ACZ1"
-	or mapheaderinfo[map].musname == "ACZ2"
-	or mapheaderinfo[map].musname == "VSFANG"
-	or mapheaderinfo[map].musname == "SPEC5"
-	or mapheaderinfo[map].musname == "MP_DES"
-	or mapheaderinfo[map].musname == "MP_GLZ"
-	or mapheaderinfo[map].musname == "MP_GL2"
-	//red volcano
-	or mapheaderinfo[map].musname == "RVZ1"
-	or mapheaderinfo[map].musname == "RVZ2")
-		// ACZ or desert music
-		return true;
-	end
-
-	local desertWords = {
-		"arid",
-		"canyon",
-		"wasteland",
-		"sand",
-		"desert",
-		"mirage",
-		"saloon",
-		"western",
-		"cactus",
-		"cacti",
-		"oasis",
-		"gulch",
-		"badland",
-		"pyramid",
-		"cowboy",
-		"dune",
-		"tumbleweed",
-		"wild west",
-		"roast",
-		"texas",
-		"templar",
-		"flame",
-		"volcano",
-		"vulcan",
-		"molten",
-		"lava",
-		"eruption",
-		"erupt",
-		"erupting",
-		
-	};
-
-	local stageName = string.lower(mapheaderinfo[map].lvlttl);
-	for i = 1,#desertWords do
-		if (string.find(stageName, desertWords[i]) != nil)
-			-- Has a very distinctly desert word in its title
-			return true;
-		end
-	end
-
-	return false;
-
-end
-local function isIcy(map)
-	if (mapheaderinfo[map] == nil)
-		return false;
-	end
-	
-	if (mapheaderinfo[map].typeoflevel & TOL_NIGHTS)
-		TAKIS_NET.donotfreeze = true
-	end
-
-	if (mapheaderinfo[map].takis_donotfreeze)
-		TAKIS_NET.donotfreeze = true
-	end
-
-	if (mapheaderinfo[map].takis_iscoldarea)
-		return true;
-	end
-	
-	// https://wiki.srb2.org/wiki/Flats_and_textures/Skies
-	if (mapheaderinfo[map].skynum == 17
-	or mapheaderinfo[map].skynum == 29
-	or mapheaderinfo[map].skynum == 30
-	or mapheaderinfo[map].skynum == 107
-	or mapheaderinfo[map].skynum == 55)
-		return true;
-	end
-
-	if (mapheaderinfo[map].musname == "MP_ICE"
-	or mapheaderinfo[map].musname == "FHZ"
-	or mapheaderinfo[map].musname == "CCZ")
-		// ice music
-		return true;
-	end
-	
-	//time to bust out the thesaurus!
-	local icywords = {
-		"frozen",
-		"christmas",
-		"ice",
-		"icy",
-		"icicle",
-		"blizzard",
-		"snow",
-		"snowstorm",
-		"frost",
-		"winter",
-		"chilly",
-		"frigid",
-		"artic",
-		"polar",
-		"glacial",
-		"glacier",
-		"wintery",
-		"subzero",
-		"tundra",
-		"snowcap",
-		"icecap",
-	};
-
-	local stageName = string.lower(mapheaderinfo[map].lvlttl);
-	for i = 1,#icywords do
-		if (string.find(stageName, icywords[i]) != nil)
-			-- Has a very distinctly desert word in its title
-			return true;
-		end
-	end
-
-	return false;
-
-end
-
 local transtonum = {
 	[FF_TRANS90] = 9,
 	[FF_TRANS80] = 8,
@@ -218,19 +52,6 @@ addHook("MapLoad", function(mapid)
 	
 	t.inspecialstage = G_IsSpecialStage(mapid)
 	t.isretro = (maptol & TOL_MARIO)
-	
-	t.donotsunstroke = false
-	t.texasarea = isTexas(mapid)
-	
-	t.donotfreeze = false
-	t.icyarea = isIcy(mapid)
-	
-	//or you can put Lua.Takis_DoNotSunstroke/Freeze in your map
-	//header to activate these
-	if t.inspecialstage
-		t.donotsunstroke = true
-		t.donotfreeze = true
-	end
 	
 	t.livescount = 0
 	t.usesheartcards = true
@@ -1627,8 +1448,11 @@ addHook("PostThinkFrame", function ()
         if not (p and p.valid) then continue end
 		if not (p.mo and p.mo.valid) then continue end
 		if not (p.mo.skin == TAKIS_SKIN) then continue end
-        --print(string.format("%x", p.pflags), string.format("%x", PF_SLIDING))
-        if p.takistable.inwaterslide then
+		
+		local takis = p.takistable
+		
+        if takis.inwaterslide
+		and not (takis.inPain or takis.inFakePain) then
             p.mo.sprite2 = SPR2_SLID
             p.mo.frame = ($ & ~FF_FRAMEMASK) | (leveltime % 4) / 2
             p.drawangle = p.mo.angle

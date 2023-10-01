@@ -105,6 +105,18 @@ rawset(_G, "TakisBooleans", function(p,me,takis,SKIN)
 	
 	takis.onPosZ = (z == posz)
 	
+	if (me.eflags & MFE_JUSTHITFLOOR)
+		takis.timetouchingground = $+1
+	else
+		takis.timetouchingground = 0
+	end
+	
+	if (takis.timetouchingground == 1)
+		takis.justHitFloor = true
+	else
+		takis.justHitFloor = false
+	end
+	
 	if (P_IsObjectOnGround(me))
 	or (takis.onPosZ)
 	and (not (P_CheckDeathPitCollide(me)))
@@ -718,205 +730,14 @@ rawset(_G, "TakisDoShorts", function(p,me,takis)
 	*/
 
 	--
-
-	if ((me.subsector) and (me.subsector.sector))
-		local sec = me.subsector.sector
-		
-		if sec.lightlevel >= TAKIS_SHADE_BRIGHTNESS
-		or (sec.ceilingpic == "F_SKY1")
-			takis.inshade = false
-		else
-			takis.inshade = true
-		end
-		
-		if (sec.ceilingpic ~= "F_SKY1")
-			takis.inshade = true
-		end
-		
-		for rover in sec.ffloors() 
-			
-			if ((rover) and (rover.valid))
-				if not (rover.bottomheight > me.z+me.height)
-					continue
-				end
-				
-				if rover.toplightlevel < TAKIS_SHADE_BRIGHTNESS
-					takis.inshade = true
-				else
-					takis.inshade = false
-				end
-			end
-			
-		end
-	end
 	
 	if takis.accspeed >= 60*FU
 		if (me.state == S_PLAY_WALK or me.state == S_PLAY_RUN)
-			if not TAKIS_NET.icyarea
-				takis.goingfast = true
-				takis.wentfast = 10*TR
-			else
-				if ((takis.aliments.iceremove > 0)
-				or (takis.aliments.icecount > 0))
-				and not takis.inWater
-					takis.aliments.iceremove = $-2
-					if takis.aliments.icecount >= 7
-						takis.aliments.icecount = $-7
-					else
-						takis.aliments.icecount = 0
-					end
-				end
-			end
+			takis.goingfast = true
+			takis.wentfast = 10*TR
 		end
 	else
 		takis.goingfast = false
-		if TAKIS_NET.icyarea
-		and (takis.aliments.iceremove > 0)
-		and (takis.aliments.iceremove ~= TAKIS_MAX_UNFREEZE)
-			if not (leveltime % (TR))
-				takis.aliments.iceremove = $+1
-			end
-		end
-	end
-	
-	if takis.aliments.iceremove < 0
-		takis.aliments.iceremove = 0
-	end
-	if takis.aliments.iceremove > TAKIS_MAX_UNFREEZE
-		takis.aliments.iceremove = TAKIS_MAX_UNFREEZE
-	end
-	
-	//check for sunstroke
-	if TAKIS_NET.texasarea
-	and (TAKIS_NET.donotsunstroke == false)
-		TakisResetAliments(takis,"freezing")
-		local protect = false
-		if (p.powers[pw_shield] & (SH_PROTECTFIRE|SH_PROTECTWATER))
-		or not me.health
-			protect = true
-			TakisResetAliments(takis,"sunstroke")
-		end
-		
-		if ((me.subsector) and (me.subsector.sector))
-			local sec = me.subsector.sector
-			
-			if not (takis.inshade)
-				takis.wentfast = 4*TR
-				
-				if (leveltime > 0)
-				and not (leveltime % (8*TR))
-				
-					if not takis.aliments.sunstroked
-					and not (p.pflags & PF_FINISHED)
-					and not protect
-						takis.aliments.sunstroked = true
-						DoFlash(p,PAL_NUKE,2)
-					end
-					
-				end
-				
-			end
-		end
-		
-		if takis.aliments.sunstroked
-		
-			//if not (leveltime % (3*TR))
-			if not ( ((p.exiting) or (p.pflags & PF_FINISHED) or (not me.health)) )
-			
-				takis.aliments.sunstrokecount = $+1
-			end
-			
-			if takis.aliments.sunstrokecount == TAKIS_MAX_SUNSTROKE
-				
-				//hurt the player without calling the heal func
-				if takis.heartcards
-					takis.heartcards = $-1
-					takis.HUD.heartcards.shake = $+TAKIS_HEARTCARDS_SHAKETIME
-					S_StartSound(nil,sfx_antiri,p)
-				else
-					if p.rings > 0
-						p.rings = $-1
-						S_StartSound(nil,sfx_antiri,p)
-					else
-						if (p.powers[pw_shield] == SH_NONE)
-							P_DamageMobj(me,nil,nil,1,DMG_INSTAKILL)
-							TakisAwardAchievement(p,ACHIEVEMENT_HEATSTROKE)
-						else
-							P_RemoveShield(p)
-							S_StartSound(nil,sfx_antiri,p)
-						end
-					end
-				end
-				
-				takis.aliments.sunstrokecount = 0
-			end
-		else
-			takis.aliments.sunstrokecount = 0
-		end
-		
-	//check for freezing
-	elseif TAKIS_NET.icyarea
-	and (TAKIS_NET.donotfreeze == false)
-		TakisResetAliments(takis,"sunstroke")
-		
-		if not takis.aliments.iced
-			takis.aliments.icecount = 0
-			
-			if takis.inWater
-				takis.aliments.timetoice = $+2
-			else
-				//if the ceiling isnt f_sky1, theres a good change
-				//we're inside that has ac
-				if me.subsector.sector.ceilingpic == "F_SKY1"
-					if ((leveltime) and not (leveltime % TR))
-						takis.aliments.timetoice = $+4
-					end
-				end
-			end
-			
-			if takis.aliments.timetoice >= TAKIS_MAX_ICETIME
-				takis.aliments.iced = true
-				takis.aliments.timetoice = 0
-				takis.aliments.iceremove = TAKIS_MAX_UNFREEZE
-				DoFlash(p,PAL_WHITE,2)
-			end
-		else
-			
-			if not takis.inWater
-				
-				if ((leveltime) and not (leveltime % TR))
-					takis.aliments.iceremove = $+1
-				end
-			else
-				if takis.aliments.iceremove ~= TAKIS_MAX_UNFREEZE
-					takis.aliments.iceremove = $+2
-				end
-				if takis.aliments.icecount ~= TAKIS_MAX_ICECOUNT
-					takis.aliments.icecount = $+1
-				end
-			end
-			
-			//if the ceiling isnt f_sky1, theres a good change
-			//we're inside that has ac
-			if me.subsector.sector.ceilingpic ~= "F_SKY1"
-				if ((leveltime) and not (leveltime % TR))
-					takis.aliments.icecount = $-3
-					takis.aliments.iceremove = $-2
-				end
-			else
-				takis.aliments.icecount = $+1
-				if takis.aliments.icecount >= TAKIS_MAX_ICECOUNT
-					P_KillMobj(me)
-					takis.saveddmgt = "DMG_FROZEN"
-				end
-			end
-
-			if takis.aliments.iceremove == 0
-				takis.aliments.iced = false
-			end
-		end
-	else
-		TakisResetAliments(takis)
 	end
 	
 	//spawn sweat mobj
@@ -930,38 +751,11 @@ rawset(_G, "TakisDoShorts", function(p,me,takis)
 		if ((takis.sweat) and (takis.sweat.valid))
 		and ((takis.sweat.state == S_TAKIS_SWEAT2) or (takis.sweat.state == S_TAKIS_SWEAT4))
 			P_RemoveMobj(takis.sweat)
-			if takis.aliments.sunstroked
-				takis.aliments.sunstroked = false
-			end
 		end
 	end
 	
-	if takis.aliments.icecount < 0
-		takis.aliments.icecount = 0
-	end
-	if takis.aliments.icecount > TAKIS_MAX_ICECOUNT
-		takis.aliments.icecount = TAKIS_MAX_ICECOUNT
-	end
-	
-	if (p.pflags & PF_FINISHED)
-		TakisResetAliments(takis)
-	/*
-	else
-		takis.yeahwait = 0
-		takis.yeahed = false
-	*/
-	end
 	
 	if takis.inWater
-		if TAKIS_NET.texasarea
-			takis.aliments.sunstroked = false
-			takis.aliments.sunstrokecount = 0
-		elseif TAKIS_NET.icyarea
-			if takis.aliments.iced
-				takis.aliments.icecount = $+2
-			end
-		end
-		
 		if ((takis.sweat) and (takis.sweat.valid))
 			P_RemoveMobj(takis.sweat)
 			takis.wentfast = 0
@@ -979,11 +773,6 @@ rawset(_G, "TakisDoShorts", function(p,me,takis)
 	and (takis.heartcards ~= 0 or takis.heartcardpieces ~= 0)
 		takis.heartcards = 0
 		takis.heartcardpieces = 0
-	end
-	
-	if (p.powers[pw_shield] & (SH_PROTECTFIRE|SH_PROTECTWATER))
-		TakisResetAliments(takis,"freezing")
-		TakisResetAliments(takis,"sunstroke")
 	end
 	
 	if P_CheckDeathPitCollide(me)
@@ -1167,10 +956,6 @@ rawset(_G, "TakisDoShorts", function(p,me,takis)
 		p.thrustfactor = skins[TAKIS_SKIN].thrustfactor*3
 	else
 		p.thrustfactor = skins[TAKIS_SKIN].thrustfactor
-	end
-	
-	if (p.pizzaface)
-		TakisResetAliments(takis)
 	end
 	
 	for p2 in players.iterate
@@ -1545,13 +1330,6 @@ rawset(_G, "CanPlayerHurtPlayer", function(p1,p2,nobs)
 			end
 		elseif (gametyperules & (GTR_FRIENDLYFIRE|GTR_RINGSLINGER))
 		or ((ff) and (p1.ctfteam == p2.ctfteam))
-			if (p1.vshteam)
-			and (p2.vshteam)
-				if (p1.vshteam == p2.vshteam)
-					return false
-				end
-			end
-			
 			return true
 		end
 		
@@ -1680,6 +1458,7 @@ rawset(_G, "TakisHUDShieldUsability", function(player)
 			if f == SH_WHIRLWIND
 			or f == SH_THUNDERCOIN
 				if not (p.pflags & PF_THOKKED|PF_SHIELDABILITY)
+				and (p.pflags & PF_JUMPED)
 					return true
 				end
 				return false
@@ -2035,20 +1814,7 @@ rawset(_G, "TakisDeathThinker",function(p,me,takis)
 	end
 	
 	if takis.saveddmgt
-		if takis.saveddmgt == "DMG_FROZEN"
-			me.sprite2 = SPR2_TICE
-			me.flags = $ &~MF_NOCLIPHEIGHT
-			me.color = SKINCOLOR_ICY
-			
-			if not (takis.onGround)
-				if p.deadtimer > TR
-					p.deadtimer = TR
-				end
-			end
-			
-			TakisSpawnDeadBody(p,me,takis)
-			return
-		elseif takis.saveddmgt == DMG_CRUSHED
+		if takis.saveddmgt == DMG_CRUSHED
 			if p.deadtimer == 1
 			and takis.onGround
 				S_StartSound(me,sfx_slam)
@@ -2132,7 +1898,7 @@ rawset(_G, "TakisDeathThinker",function(p,me,takis)
 		end
 	end
 	
-	if me.eflags & MFE_JUSTHITFLOOR
+	if takis.justHitFloor
 	and (me.sprite2 ~= SPR2_TDD2)
 	and takis.onGround
 	and p.deadtimer > 3
@@ -2155,135 +1921,10 @@ rawset(_G, "TakisDeathThinker",function(p,me,takis)
 	
 end)
 
-local lerp0 = {
-	["SUNSTROKE"] = 0,
-	["FREEZING"] = 0,
-}
-local lerp1 = {
-	["SUNSTROKE"] = 0,
-	["FREEZING"] = 0,
-}
-
 local function FixedLerp(val1,val2,amt)
 	local p = FixedMul(FRACUNIT-amt,val1) + FixedMul(amt,val2)
 	return p
 end
-
-rawset(_G,"TakisDrawAliments", function(v, p, x, y, scale, flags, sx, sy, salign, dist, angle)
-
-	local lerp = 0
-	if (p == displayplayer)
-		lerp = lerp0
-	else
-		lerp = lerp1
-	end
-	
-	local takis = p.takistable
-	
-	local lerpx, lerpy = 0, 0
-	
-	local function DoShift(val, ang)
-		lerpx = $+P_ReturnThrustX(nil, ang, val)
-		lerpy = $+P_ReturnThrustY(nil, ang, val)
-	end
-	local function DoLerp(kind, retract, val)
-		if (p == displayplayer) then
-			if (retract)
-				lerp0[kind] = FixedLerp(lerp0[kind], 0, FU*60/100)
-			else
-				lerp0[kind] = FixedLerp(lerp0[kind], val, FU*60/100)
-			end
-		else
-			if (retract)
-				lerp1[kind] = FixedLerp(lerp1[kind], 0, FU*60/100)
-			else
-				lerp1[kind] = FixedLerp(lerp1[kind], val, FU*60/100)
-			end
-		end
-	end
-	
-	local sspatch = v.cachePatch("TA_SUNS")
-	local ipatch = v.cachePatch("TA_FREZ")
-	
-	if takis.aliments.sunstroked
-		v.drawScaled(x+lerpx, y+lerpy, scale, sspatch, flags)
-		
-		DoShift(lerp["SUNSTROKE"], angle)
-		DoLerp("SUNSTROKE", false, dist)
-	else
-		DoShift(lerp["SUNSTROKE"], angle)
-		DoLerp("SUNSTROKE", true, dist)
-	end
-
-	if takis.aliments.sunstrokecount
-		local max = TAKIS_MAX_SUNSTROKE*FU
-		local erm = FixedDiv(takis.aliments.sunstrokecount*FU,max)
-		
-		local scale2 = (30*FU)-FixedMul(erm,30*FU)
-		
-		if scale2 < 0 then scale2 = FU end
-		
-		v.drawCropped(
-		(hudinfo[HUD_LIVES].x)*FU, (hudinfo[HUD_LIVES].y*FU)+(scale2/2),
-		scale,scale,v.cachePatch("TA_SUN"), flags,nil,
-		0,scale2,30*FU,30*FU)	
-	end
-
-	if takis.aliments.iced
-		v.drawScaled(x+lerpx, y+lerpy, scale, ipatch, flags)
-		
-		DoShift(lerp["FREEZING"], angle)
-		DoLerp("FREEZING", false, dist)
-	else
-		DoShift(lerp["FREEZING"], angle)
-		DoLerp("FREEZING", true, dist)
-	end
-	
-	
-	if takis.aliments.icecount
-		local max = TAKIS_MAX_ICECOUNT*FU
-		local erm = FixedDiv(takis.aliments.icecount*FU,max)
-		
-		local scale2 = (30*FU)-FixedMul(erm,30*FU)
-		
-		if scale2 < 0 then scale2 = FU end
-		
-		v.drawCropped(
-		(hudinfo[HUD_LIVES].x)*FU, (hudinfo[HUD_LIVES].y*FU)+(scale2/2),
-		scale,scale,v.cachePatch("TA_ICE"), flags,nil,
-		0,scale2,30*FU,30*FU)	
-	end
-	
-end)
-
-rawset(_G,"TakisResetAliments", function(takis,which)
-	if which == nil
-		which = "all"
-	end
-	
-	which = string.lower(which)
-	
-	if which == "all"
-		takis.aliments.sunstroked = false
-		takis.aliments.sunstrokecount = 0
-		takis.aliments.iced = false
-		takis.aliments.icecount = 0
-		takis.aliments.timetoice = 0
-		takis.aliments.iceremove = 0
-	else
-	
-		if which == "sunstroke"
-			takis.aliments.sunstroked = false
-			takis.aliments.sunstrokecount = 0
-		elseif which == "freezing"
-			takis.aliments.iced = false
-			takis.aliments.icecount = 0
-			takis.aliments.timetoice = 0
-			takis.aliments.iceremove = 0
-		end
-		
-	end
-end)
 
 local blerp0 = {
 	["ULTIMATE"] = 0,
