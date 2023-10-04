@@ -900,6 +900,7 @@ local function drawcombostuff(v,p)
 			width = 0
 		end
 		takis.HUD.combo.patchx = v.cachePatch("TAKCOFILL").width*FU/2
+		local patchx = takis.HUD.combo.patchx
 		
 		v.drawCropped(backx,backy,comboscale,comboscale,
 			v.cachePatch("TAKCOFILL"),
@@ -914,8 +915,8 @@ local function drawcombostuff(v,p)
 			V_HUDTRANS|V_SNAPTOLEFT|V_SNAPTOTOP
 		)
 		
-		v.drawString(FixedMul(backx+5*FU+(takis.HUD.combo.patchx),comboscale),
-			FixedMul(backy+7*FU,comboscale),
+		v.drawString(backx+5*comboscale+(FixedMul(patchx,comboscale)),
+			backy+7*comboscale,
 			takis.combo.score,
 			V_HUDTRANS|V_SNAPTOLEFT|V_SNAPTOTOP,
 			"thin-fixed-center"
@@ -923,8 +924,8 @@ local function drawcombostuff(v,p)
 		
 		//draw combo rank
 		local length = #TAKIS_COMBO_RANKS
-		v.drawString(FixedMul(backx+7*FU,comboscale),
-			FixedMul(backy+20*FU,comboscale),
+		v.drawString(backx+7*comboscale,
+			backy+20*comboscale,
 			TAKIS_COMBO_RANKS[ ((takis.combo.rank-1) % length)+1 ],
 			V_HUDTRANS|V_ALLOWLOWERCASE|V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER,
 			"thin-fixed"

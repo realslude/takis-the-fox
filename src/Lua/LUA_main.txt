@@ -1571,7 +1571,7 @@ addHook("PlayerThink", function(p)
 					takis.HUD.flyingscore.tics = $+2*TR
 					local backx = 15*FU
 					local backy = 70*FU
-					takis.HUD.flyingscore.x = backx+5*FU+(v.cachePatch("TAKCOFILL").width*FU/2)
+					takis.HUD.flyingscore.x = backx+5*FU+takis.HUD.combo.patchx
 					takis.HUD.flyingscore.y = backy+7*FU
 				
 					if not (p.pflags & PF_FINISHED)

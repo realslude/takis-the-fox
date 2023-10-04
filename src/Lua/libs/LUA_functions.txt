@@ -355,10 +355,10 @@ rawset(_G, "TakisHUDStuff", function(p)
 		local tics = ((2*TR)+1)-hud.flyingscore.tics
 		
 		local backx = 15*FU
-		local backy = 70*FU+shake
+		local backy = 70*FU
 		
 		hud.flyingscore.x = ease.inexpo(( FU / expectedtime )*tics,
-		backx+5*FU+(v.cachePatch("TAKCOFILL").width*FU/2), 
+		backx+5*FU+hud.combo.patchx, 
 		285*FU
 		)
 		hud.flyingscore.y = ease.inexpo(( FU / expectedtime )*tics,
