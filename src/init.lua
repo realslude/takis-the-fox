@@ -52,7 +52,7 @@ local filelist = {
 //
 
 rawset(_G, "filesdone", 0)
-rawset(_G, "NUMFILES", (#guh)+(#filelistt1)+(#filelist) )
+rawset(_G, "NUMFILES", (#guh)+(#filelistt1)+(#filelist)-1)
 
 local function dofile2(file)
 	dofile(file)

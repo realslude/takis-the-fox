@@ -1537,23 +1537,23 @@ addHook("PlayerThink", function(p)
 				takis.combo.verylevel = takis.combo.count/(#TAKIS_COMBO_RANKS*TAKIS_COMBO_UP)
 				
 				if takis.combo.time <= TAKIS_MAX_COMBOTIME/4
-					takis.HUD.combo.meter.shake = (P_RandomFixed())*3/2
+					takis.HUD.combo.shake = (P_RandomFixed())*3/2
 				elseif takis.combo.time <= TAKIS_MAX_COMBOTIME/2
-					takis.HUD.combo.meter.shake = P_RandomFixed()
+					takis.HUD.combo.shake = P_RandomFixed()*2/3
 				else
-					if takis.HUD.combo.meter.shake > 0
-						takis.HUD.combo.meter.shake = $-3
+					if takis.HUD.combo.shake > 0
+						takis.HUD.combo.shake = $-1
 					else
-						takis.HUD.combo.meter.shake = 0
+						takis.HUD.combo.shake = 0
 					end
 				end
 			else
 				takis.combo.frozen = false
 				takis.combo.cashable = false
-				if takis.HUD.combo.meter.shake > 0
-					takis.HUD.combo.meter.shake = $-3
+				if takis.HUD.combo.shake > 0
+					takis.HUD.combo.shake = $-1
 				else
-					takis.HUD.combo.meter.shake = 0
+					takis.HUD.combo.shake = 0
 				end
 				
 				if takis.combo.count
@@ -1569,8 +1569,10 @@ addHook("PlayerThink", function(p)
 					
 					takis.HUD.flyingscore.num = takis.combo.score
 					takis.HUD.flyingscore.tics = $+2*TR
-					takis.HUD.flyingscore.x = (hudinfo[HUD_RINGS].x+5-8)*FU+(45*FU)
-					takis.HUD.flyingscore.y = (hudinfo[HUD_RINGS].y+14)*FU+(20*FU)
+					local backx = 15*FU
+					local backy = 70*FU
+					takis.HUD.flyingscore.x = backx+5*FU+(v.cachePatch("TAKCOFILL").width*FU/2)
+					takis.HUD.flyingscore.y = backy+7*FU
 				
 					if not (p.pflags & PF_FINISHED)
 						if not takis.combo.dropped
@@ -2075,6 +2077,9 @@ addHook("MobjDamage", function(mo,inf,sor,_,dmgt)
 		local soap = mo.player.takistable
 		
 		S_StartSound(me,sfx_sparry)
+		if (inf.player and inf.player.valid)
+			S_StartSound(inf,sfx_sparry,inf.player)
+		end
 		
 		soap.taunttime = 0
 		soap.tauntid = 0
@@ -2704,72 +2709,7 @@ local function hurtbytakis(mo,inf,sor)
 			end
 			if inf.type == MT_THROWNSCATTER
 			and inf.shotbytakis
-				if (mo.flags & MF_ENEMY)
-					//stupid
-					//spawn ragdoll thing here
-					local tm = mo
-					local t = sor
-					local ragdoll = P_SpawnMobjFromMobj(tm,0,0,0,MT_TAKIS_BADNIK_RAGDOLL)
-					tm.tics = -1
-					ragdoll.sprite = tm.sprite
-					ragdoll.color = tm.color
-					ragdoll.angle = R_PointToAngle2(tm.x,tm.y, t.x,t.y)
-					ragdoll.frame = tm.frame
-					ragdoll.height = tm.height*2
-					ragdoll.radius = tm.radius*2
-					ragdoll.scale = tm.scale
-					ragdoll.timealive = 1
-					ragdoll.angle = tm.angle+t.player.takistable.accspeed
-					ragdoll.parent2 = t
-					ragdoll.flags = 0
-					ragdoll.ragdoll = true
-					
-					P_SetObjectMomZ(ragdoll,7*t.scale)
-					
-					P_Thrust(ragdoll,ragdoll.angle,
-						-63*t.scale-FixedMul(t.player.takistable.accspeed,t.scale)
-					)
-					
-					if P_RandomChance(FRACUNIT/13)
-						S_StartSound(ragdoll,sfx_takoww)
-					end
-				elseif ( mo.flags & MF_MONITOR)
-					local tm = mo
-					local t = sor
-					
-					//but are we allowed to break it?
-					if ((tm.type == MT_RING_REDBOX) or
-					(tm.type == MT_RING_BLUEBOX))
-						if monitorctfteam[tm.type] ~= t.player.ctfteam
-							return
-						end
-					end
-					
-					//spawn ragdoll thing here
-					local ragdoll = P_SpawnMobjFromMobj(tm,0,0,0,MT_TAKIS_BADNIK_RAGDOLL)
-					tm.tics = -1
-					ragdoll.sprite = tm.sprite
-					ragdoll.color = tm.color
-					ragdoll.angle = R_PointToAngle2(tm.x,tm.y, t.x,t.y)
-					ragdoll.frame = tm.frame
-					ragdoll.height = tm.height*2
-					ragdoll.radius = tm.radius*2
-					ragdoll.scale = tm.scale
-					ragdoll.timealive = 1
-					
-					P_SetObjectMomZ(ragdoll,7*t.scale)
-					P_Thrust(ragdoll,ragdoll.angle,-63*t.scale-FixedMul(t.player.takistable.accspeed,t.scale))
-					for i = 0, 34
-						A_BossScream(ragdoll,1,MT_SONIC3KBOSSEXPLODE)
-					end
-					local f = P_SpawnGhostMobj(ragdoll)
-					f.flags2 = $|MF2_DONTDRAW
-					f.fuse = 2*TR
-					S_StartSound(f,sfx_tkapow)
-					P_RemoveMobj(ragdoll)
-						
-				end
-				
+				spawnragthing(mo,inf)
 			end
 		end
 		

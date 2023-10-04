@@ -459,15 +459,9 @@ rawset(_G, "TakisInitTable", function(p)
 				finished = {90-(13*6)+75+15 +15,(62-6)+20},
 			},
 			combo = {
-				meter = {
-					FIXED = {(hudinfo[HUD_RINGS].x+5-8)*FU,(hudinfo[HUD_RINGS].y+14)*FU},
-			
-			int = {(hudinfo[HUD_RINGS].x+18+8-22),(hudinfo[HUD_RINGS].y+30-2+3)},
-					shake = 0,
-				},
-				num = {
-					int = {hudinfo[HUD_RINGS].x+16+8+6,hudinfo[HUD_RINGS].y+18},
-				},
+				scale = FU,
+				shake = 0,
+				patchx = 0,
 				tokengrow = 0,
 			},
 			flyingscore = {
@@ -553,7 +547,7 @@ rawset(_G, "TakisInitTable", function(p)
 	takis_printwarning(p)
 	
 	if P_RandomChance(FU/2)
-	CONS_Printf(p, "\n"+"\x82"+"Look for the Gummy Bear album in stores on November 13th. ")
+		CONS_Printf(p, "\n"+"\x82"+"Look for the Gummy Bear album in stores on November 13th. ")
 	end
 	return true
 end)
@@ -1055,16 +1049,5 @@ addHook("NetVars",function(n)
 	TAKIS_MAX_HEARTCARDS = n($)
 	TAKIS_MENU = n($)
 end)
-
-freeslot("SKINCOLOR_TAKIS_BARYELLOW")
-skincolors[SKINCOLOR_TAKIS_BARYELLOW] = {
-    name = "Alt Yellow",
-//  ramp = {82,-82,83,-74,74,74,-76,75,-77,76,-78,77,78,78,79,237},
-    ramp = {82, 72,83, 74,74,74, 75,75, 76,76, 77,77,78,78,79,237},
-    invcolor = SKINCOLOR_CORNFLOWER,
-    invshade = 35,
-    chatcolor = V_YELLOWMAP,
-    accessible = false
-}
 
 filesdone = $+1

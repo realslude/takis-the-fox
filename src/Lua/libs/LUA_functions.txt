@@ -353,17 +353,16 @@ rawset(_G, "TakisHUDStuff", function(p)
 	if hud.flyingscore.tics > 0
 		local expectedtime = 2*TR
 		local tics = ((2*TR)+1)-hud.flyingscore.tics
-		local c = (14*FU)
-		if (p.pflags & PF_FINISHED)
-			c = $+(16*FU)
-		end
+		
+		local backx = 15*FU
+		local backy = 70*FU+shake
 		
 		hud.flyingscore.x = ease.inexpo(( FU / expectedtime )*tics,
-		(hudinfo[HUD_RINGS].x+5-8)*FU+(45*FU), 
+		backx+5*FU+(v.cachePatch("TAKCOFILL").width*FU/2), 
 		285*FU
 		)
 		hud.flyingscore.y = ease.inexpo(( FU / expectedtime )*tics,
-		(hudinfo[HUD_RINGS].y+14)*FU+(20*FU)+c, 
+		backy+7*FU, 
 		15*FU
 		)
 		
@@ -444,7 +443,10 @@ rawset(_G, "TakisHUDStuff", function(p)
 		
 	hud.flyingscore.xshake = $/3
 	hud.flyingscore.yshake = $/3
-
+	
+	if hud.combo.scale ~= 0
+		hud.combo.scale = $*8/10
+	end
 end)
 
 rawset(_G, "TakisDoShorts", function(p,me,takis)
@@ -1081,7 +1083,7 @@ rawset(_G, "TakisDoShorts", function(p,me,takis)
 	
 	if takis.afterimaging
 	or (p.powers[pw_invulnerability]
-	or p.powers[pw_super])
+	or p.powers[pw_super] or takis.hammerblastdown)
 		p.powers[pw_strong] = $|STR_SPIKE
 	else
 		p.powers[pw_strong] = $ &~STR_SPIKE
@@ -1452,36 +1454,35 @@ rawset(_G, "TakisHUDShieldUsability", function(player)
 	and not (player.mo.state >= 59 and player.mo.state <= 64)
 		local t = takis.attracttarg
 			
-			if s & SH_FORCE
+		if s & SH_FORCE
+			return true
+		end
+		if f == SH_WHIRLWIND
+		or f == SH_THUNDERCOIN
+			if not (p.pflags & PF_THOKKED|PF_SHIELDABILITY)
 				return true
 			end
-			if f == SH_WHIRLWIND
-			or f == SH_THUNDERCOIN
-				if not (p.pflags & PF_THOKKED|PF_SHIELDABILITY)
-				and (p.pflags & PF_JUMPED)
-					return true
-				end
-				return false
-			end
-			if f == SH_ARMAGEDDON
+			return false
+		end
+		if f == SH_ARMAGEDDON
+			return true
+		end
+		if f == SH_ATTRACT
+			if (p.powers[pw_shield]&SH_NOSTACK) == SH_ATTRACT
+			and not (me.state >= 59 and me.state <= 64)
+			//and not ((p.pflags & PF_THOKKED) or (takis.thokked or takis.dived))
 				return true
 			end
-			if f == SH_ATTRACT
-				if (p.powers[pw_shield]&SH_NOSTACK) == SH_ATTRACT
-				and not (me.state >= 59 and me.state <= 64)
-				//and not ((p.pflags & PF_THOKKED) or (takis.thokked or takis.dived))
-					return true
-				end
-				return false
-			end
-			if f == SH_BUBBLEWRAP
-			or f == SH_ELEMENTAL
-				return true
-			end
-			if f == SH_FLAMEAURA
-			and not (takis.thokked or takis.dived or p.pflags & (PF_THOKKED|PF_SHIELDABILITY))
-				return true
-			end
+			return false
+		end
+		if f == SH_BUBBLEWRAP
+		or f == SH_ELEMENTAL
+			return true
+		end
+		if f == SH_FLAMEAURA
+		and not (takis.thokked or takis.dived or p.pflags & (PF_THOKKED|PF_SHIELDABILITY))
+			return true
+		end
 		
 	end
 	return false
@@ -1586,10 +1587,12 @@ local monitorctfteam = {
 	[MT_RING_BLUEBOX] = 2	
 }
 rawset(_G, "SpawnRagThing",function(tm,t)
+	local speed = FixedHypot(t.momx,t.momy)
 	if t.player
-		DoQuake(t.player,t.scale*10+(t.player.takistable.accspeed/4),10)
+		speed = t.player.takistable.accspeed
+		DoQuake(t.player,t.scale*10+(speed/4),10)
 	end
-
+	
 	if not (tm.flags & MF_BOSS)
 		if (tm.flags & MF_ENEMY)
 			//spawn ragdoll thing here
@@ -1603,15 +1606,17 @@ rawset(_G, "SpawnRagThing",function(tm,t)
 			ragdoll.radius = tm.radius*2
 			ragdoll.scale = tm.scale
 			ragdoll.timealive = 1
-			ragdoll.angle = tm.angle+t.player.takistable.accspeed
+			ragdoll.angle = tm.angle+speed
 			ragdoll.parent2 = t
-			ragdoll.flags = 0
+			ragdoll.target = tm
+			ragdoll.flags = MF_SOLID|MF_NOCLIPTHING
 			ragdoll.ragdoll = true
 			
 			P_SetObjectMomZ(ragdoll,7*t.scale)
 			
+			local thrust = -63
 			P_Thrust(ragdoll,ragdoll.angle,
-				-63*t.scale-FixedMul(t.player.takistable.accspeed,t.scale)
+				thrust*t.scale-FixedMul(speed,t.scale)
 			)
 			
 			if P_RandomChance(FRACUNIT/13)
@@ -1641,7 +1646,7 @@ rawset(_G, "SpawnRagThing",function(tm,t)
 			ragdoll.timealive = 1
 			
 			P_SetObjectMomZ(ragdoll,7*t.scale)
-			P_Thrust(ragdoll,ragdoll.angle,-63*t.scale-FixedMul(t.player.takistable.accspeed,t.scale))
+			P_Thrust(ragdoll,ragdoll.angle,-63*t.scale-FixedMul(speed,t.scale))
 			for i = 0, 34
 				A_BossScream(ragdoll,1,MT_SONIC3KBOSSEXPLODE)
 			end
@@ -1712,7 +1717,7 @@ rawset(_G, "TakisGiveCombo",function(p,takis,add,max,remove)
 		end
 		
 		if not (takis.combo.count % TAKIS_COMBO_UP)
-			takis.combo.intro = $+(-FU/2)*(takis.combo.count/TAKIS_COMBO_UP)
+			takis.HUD.combo.scale = $+(FU/10)
 			takis.combo.rank = $+1
 			S_StartSound(nil,sfx_s3kcas,p)
 		end

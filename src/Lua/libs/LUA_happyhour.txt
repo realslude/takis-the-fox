@@ -7,3 +7,5 @@ rawset(_G,"HAPPY_HOUR",{
 		*/
 	},
 })
+
+filesdone = $+1
