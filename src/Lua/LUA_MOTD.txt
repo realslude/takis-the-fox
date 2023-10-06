@@ -8,8 +8,8 @@ addHook("PlayerSpawn", function(p)
 end)
 
 hud.add(function(v, p)
-	if not netgame
-	or not TAKIS_ISDEBUG
+	//if not netgame
+	if not TAKIS_ISDEBUG
 		return
 	end
 	

@@ -198,6 +198,8 @@ addHook("PlayerThink", function(p)
 			takis.HUD.happyhour.hour.patch = "TAHY_HOUR"
 			*/
 			
+			local shouldntcontinueslide = false
+			
 			//if something youre looking for isnt here, theres a good
 			//chance that its in shorts!
 			TakisDoShorts(p,me,takis)
@@ -1132,7 +1134,8 @@ addHook("PlayerThink", function(p)
 							me.momz = $+( 22*me.scale + ((takis.hammerblastdown*takis.gravflip/8)*me.scale))*takis.gravflip
 						end
 						S_StartSoundAtVolume(me,sfx_kc52,180)
-					
+						shouldntcontinueslide = true
+						
 					//holding spin while landing? boost us forward!
 					elseif (takis.use > 0)
 					and me.health
@@ -1312,6 +1315,7 @@ addHook("PlayerThink", function(p)
 				if (takis.c2)
 				and (takis.accspeed > 5*FU)
 				and (takis.notCarried)
+				and (not shouldntcontinueslide)
 					if me.state ~= S_PLAY_TAKIS_SLIDE
 					and me.health
 						S_StartSound(me,sfx_taksld)
@@ -1326,8 +1330,10 @@ addHook("PlayerThink", function(p)
 				or me.sprite2 == SPR2_WALK
 					if ((me.frame == A) or (me.frame == E))
 						if not takis.steppedthisframe
+							local sfx = P_RandomRange(sfx_takst1,sfx_takst3)
+							
 							S_StartSoundAtVolume(me,sfx_takst0,255/2)
-							S_StartSound(me,P_RandomRange(sfx_takst1,sfx_takst3))
+							S_StartSound(me,sfx)
 							takis.steppedthisframe = true
 							P_SpawnSkidDust(p,3*me.scale)
 						end
@@ -1493,12 +1499,6 @@ addHook("PlayerThink", function(p)
 				takis.heartcardpieces = 0
 			end
 			
-			//hiiii nick :))
-			if ((PizzaTime) and (PizzaTime.sync.PizzaTime))
-			and not (p.pt_mode.pizzaface)
-				takis.HUD.timer.int = {90-(13*6)+75+15, (62-6)+4+8}	
-			end
-			
 			//handle combo stuff here
 			if takis.combo.time ~= 0
 				if not (takis.notCarried)
@@ -1536,17 +1536,6 @@ addHook("PlayerThink", function(p)
 				
 				takis.combo.verylevel = takis.combo.count/(#TAKIS_COMBO_RANKS*TAKIS_COMBO_UP)
 				
-				if takis.combo.time <= TAKIS_MAX_COMBOTIME/4
-					takis.HUD.combo.shake = (P_RandomFixed())*3/2
-				elseif takis.combo.time <= TAKIS_MAX_COMBOTIME/2
-					takis.HUD.combo.shake = P_RandomFixed()*2/3
-				else
-					if takis.HUD.combo.shake > 0
-						takis.HUD.combo.shake = $-1
-					else
-						takis.HUD.combo.shake = 0
-					end
-				end
 			else
 				takis.combo.frozen = false
 				takis.combo.cashable = false
@@ -1616,6 +1605,7 @@ addHook("PlayerThink", function(p)
 						if (((takis.heartcards == 0)
 						and (takis.heartcardpieces == 0))
 						and (TAKIS_NET.usesheartcards))
+						and (p.playerstate == PST_LIVE)
 							TakisAwardAchievement(p,ACHIEVEMENT_HARDCORE)
 						end
 						

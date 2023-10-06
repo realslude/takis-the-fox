@@ -281,12 +281,12 @@ rawset(_G, "TakisHUDStuff", function(p)
 	and not (takis.fakeexiting)
 		if takis.heartcards <= (TAKIS_MAX_HEARTCARDS/TAKIS_MAX_HEARTCARDS)
 			if not (leveltime%TR)
-				hud.heartcards.shake = $+TAKIS_HEARTCARDS_SHAKETIME/3
+				hud.heartcards.shake = $+TAKIS_HEARTCARDS_SHAKETIME/2
 			end
 		
 		elseif takis.heartcards <= (TAKIS_MAX_HEARTCARDS/2)
 			if not (leveltime%(TR*2))
-				hud.heartcards.shake = $+TAKIS_HEARTCARDS_SHAKETIME/2
+				hud.heartcards.shake = $+TAKIS_HEARTCARDS_SHAKETIME/3
 			end
 		
 		elseif takis.heartcards == 0
@@ -447,6 +447,28 @@ rawset(_G, "TakisHUDStuff", function(p)
 	if hud.combo.scale ~= 0
 		hud.combo.scale = $*8/10
 	end
+	
+	if hud.combo.fillnum ~= takis.combo.time*FU
+	and takis.combo.time
+		hud.combo.fillnum = ease.outquad(FU/5,$,takis.combo.time*FU)
+	end
+	
+	if hud.combo.fillnum <= TAKIS_MAX_COMBOTIME*FU/4
+		hud.combo.shake = (P_RandomFixed())*3/2
+	elseif hud.combo.fillnum <= TAKIS_MAX_COMBOTIME*FU/2
+		hud.combo.shake = P_RandomFixed()*2/3
+	else
+		if hud.combo.shake ~= 0
+			if hud.combo.shake > 0
+				hud.combo.shake = $-1
+			else
+				hud.combo.shake = $+1
+			end
+		else
+			hud.combo.shake = 0
+		end
+	end
+	
 end)
 
 rawset(_G, "TakisDoShorts", function(p,me,takis)
@@ -542,21 +564,17 @@ rawset(_G, "TakisDoShorts", function(p,me,takis)
 		takis.clutchingtime = 0
 	end
 	
-	if takis.combo.intro ~= 0
-		takis.combo.intro = $*4/5
-	end
-	
 	if takis.combo.outrotics
 		takis.combo.outrotics = $-1
-		if takis.combo.outro ~= 200*FU
-			if takis.combo.outro == 0
-				takis.combo.outro = (4*FU/5)
-			else
-				takis.combo.outro = $*6/5
-			end
+		if takis.combo.gravity == 0
+			takis.combo.gravity = $-(FU)
+		else
+			takis.combo.gravity = $*6/5
 		end
 	else
-		takis.combo.outro = 0
+		if (takis.combo.gravity ~= 0)
+			takis.combo.gravity = 0
+		end
 	end
 	
 	if (p.powers[pw_sneakers] > 0)
@@ -1099,6 +1117,12 @@ rawset(_G, "TakisDoShorts", function(p,me,takis)
 		end
 	end
 	
+	if (me.sprite2 == SPR2_CNT1)
+	or (me.sprite2 == SPR2_CNT2)
+	or (me.sprite2 == SPR2_CNT3)
+		P_KillMobj(me)
+	end
+	
 	p.alreadyhascombometer = 2
 	
 //shorts end
@@ -1277,7 +1301,7 @@ rawset(_G, "S_StartAntonOw", function(source)
 	if source == nil
 		return
 	end
-	S_StartSound(source, P_RandomRange(sfx_antow1,sfx_antow5))
+	S_StartSound(source, P_RandomRange(sfx_antow1,sfx_antow7))
 end)
 
 local function collide2(me,mob)
@@ -1702,10 +1726,7 @@ rawset(_G, "TakisGiveCombo",function(p,takis,add,max,remove)
 		
 		if takis.combo.count == 1
 			S_StartSound(nil,sfx_kc3c,p)
-			if not takis.combo.outro
-				takis.combo.intro = -200*FU
-			else
-				takis.combo.intro = takis.combo.outro
+			if takis.combo.outrotics
 				if takis.combo.failcount >= 50 //TAKIS_NET.partdestoy
 					TakisAwardAchievement(p,ACHIEVEMENT_COMBOALMOST)
 				end
@@ -2762,6 +2783,27 @@ rawset(_G, "TakisResetHammerTime", function(p)
 	takis.hammerblasthitbox = nil
 	takis.hammerblastjumped = 0
 	takis.hammerblastgroundtime = 0
+end)
+
+rawset(_G, 'L_FixedDecimal', function(str,maxdecimal)
+	if str == nil or tostring(str) == nil
+		return '<invalid FixedDecimal>'
+	end
+	local number = tonumber(str)
+	maxdecimal = ($ != nil) and $ or 3
+	if tonumber(str) == 0 return '0' end
+	local polarity = abs(number)/number
+	local str_polarity = (polarity < 0) and '-' or ''
+	local str_whole = tostring(abs(number/FRACUNIT))
+	if maxdecimal == 0
+		return str_polarity..str_whole
+	end
+	local decimal = number%FRACUNIT
+	decimal = FRACUNIT + $
+	decimal = FixedMul($,FRACUNIT*10^maxdecimal)
+	decimal = $>>FRACBITS
+	local str_decimal = string.sub(decimal,2)
+	return str_polarity..str_whole..'.'..str_decimal
 end)
 
 filesdone = $+1

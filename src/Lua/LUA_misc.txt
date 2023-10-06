@@ -299,6 +299,30 @@ addHook("MobjThinker", function(ai)
 	
 end, MT_TAKIS_AFTERIMAGE)
 
+addHook("MobjSpawn",function(AA)
+	AA.spritexscale,AA.spriteyscale = 2*FU,2*FU
+	AA.timealive = 1
+	AA.scale = FU*2
+end,MT_TAKIS_BADNIK_RAGDOLL_A)
+addHook("MobjThinker",function(AA)
+	if not AA
+	or not AA.valid
+		return
+	end
+	
+	local flip = P_MobjFlip(AA)
+	if AA.timealive <= 10
+		AA.z = $ - ((10-AA.timealive)*FU)*flip
+	else
+		AA.z = $ + ((AA.timealive-10)*FU)*flip
+		AA.destscale = 0
+	end
+	
+	
+	AA.timealive = $+1
+	
+end,MT_TAKIS_BADNIK_RAGDOLL_A)
+
 addHook("MobjThinker", function(rag)
 	if not rag
 	or not rag.valid
@@ -307,6 +331,10 @@ addHook("MobjThinker", function(rag)
 	
 	rag.speed = abs(FixedHypot(rag.momx,rag.momy))
 	rag.timealive = $+1
+	if not (rag.timealive % 2)
+		local aa = P_SpawnMobjFromMobj(rag,0,0,rag.height/2,MT_TAKIS_BADNIK_RAGDOLL_A)
+		aa.color = SKINCOLOR_KETCHUP
+	end
 	if rag.timealive % 5 == 0
 		local poof = P_SpawnMobjFromMobj(rag,0,0,rag.height/2,MT_SPINDUST)
 		poof.scale = FixedMul(2*FRACUNIT,rag.scale)
@@ -321,6 +349,57 @@ addHook("MobjThinker", function(rag)
 		for i = 0, 34
 			A_BossScream(rag,1,MT_SONIC3KBOSSEXPLODE)
 		end
+
+		local px = rag.x
+		local py = rag.y
+		local br = 300*rag.scale
+		local h = 20
+		
+		if TAKIS_ISDEBUG
+			local me = rag
+			for i = 0,10
+				local f1 = P_SpawnMobj(px-br,py-br,me.z+((h*FU)*i),MT_THOK)
+				f1.tics = -1
+				f1.fuse = TR
+				f1.sprite = SPR_RING
+			end
+			for i = 0,10
+				local f2 = P_SpawnMobj(px-br,py+br,me.z+((h*FU)*i),MT_THOK)
+				f2.tics = -1
+				f2.fuse = TR
+				f2.sprite = SPR_RING
+			end
+			for i = 0,10
+				local f3 = P_SpawnMobj(px+br,py-br,me.z+((h*FU)*i),MT_THOK)
+				f3.tics = -1
+				f3.fuse = TR
+				f3.sprite = SPR_RING
+			end
+			for i = 0,10
+				local f4 = P_SpawnMobj(px+br,py+br,me.z+((h*FU)*i),MT_THOK)
+				f4.tics = -1
+				f4.fuse = TR
+				f4.sprite = SPR_RING
+			end
+		end
+		
+		local helper = P_SpawnGhostMobj(rag)
+		helper.flags2 = $|MF2_DONTDRAW
+		helper.fuse = 5
+		helper.target = rag.target
+		searchBlockmap("objects", function(helper, found)
+			if found and found.valid
+			and (found.health)
+				if (found.flags & (MF_ENEMY|MF_BOSS))
+				or (found.flags & MF_MONITOR)
+				and (found.type ~= MT_EGGMAN_BOX)
+					SpawnRagThing(found,helper.target)
+				elseif (SPIKE_LIST[found.type] == true)
+					P_KillMobj(found,helper,helper.tracer)
+				end
+			end
+		end, helper, px-br, px+br, py-br, py+br)		
+		
 		local f = P_SpawnGhostMobj(rag)
 		f.flags2 = $|MF2_DONTDRAW
 		f.fuse = 2*TR
