@@ -171,12 +171,10 @@ rawset(_G, "TakisAnimateHappyHour", function(p)
 	local hud = takis.HUD
 	local me = p.mo
 
-	if ( ((JISK_PIZZATIMETICS) and (JISK_PIZZATIMETICS <= 5*TR))
-	or ((PTJE) and (PTJE.pizzatime_tics) and (PTJE.pizzatime_tics <= 5*TR)) )
-	
+	if HAPPY_HOUR.time and HAPPY_HOUR.time <= 5*TR	
 	and (takis.io.nohappyhour == 0)
 		
-		local tics = JISK_PIZZATIMETICS or ((PTJE) and (PTJE.pizzatime_tics))
+		local tics = HAPPY_HOUR.time
 		if tics == 1
 			hud.happyhour.its.yadd = -200*FU
 			hud.happyhour.happy.yadd = -100*FU
@@ -202,7 +200,7 @@ rawset(_G, "TakisAnimateHappyHour", function(p)
 				end
 				
 				//elseif hud.happyhour.face.yadd ~= 0
-					hud.happyhour.face.yadd = 4*$/5
+				hud.happyhour.face.yadd = 4*$/5
 			else
 			
 				hud.happyhour.its.yadd = $*8/5
@@ -214,8 +212,6 @@ rawset(_G, "TakisAnimateHappyHour", function(p)
 		end
 
 		hud.happyhour.doingit = true
-		
-		local tics = JISK_PIZZATIMETICS or PTJE.pizzatime_tics
 		
 		local h = hud.happyhour
 		local y = 40*FU
@@ -300,10 +296,9 @@ rawset(_G, "TakisHUDStuff", function(p)
 	
 
 	//happy hour hud and stuff
-	if (JISK_PIZZATIMETICS)
-	or ((PTJE) and (PTJE.pizzatime_tics))
+	if HAPPY_HOUR.time
 	and takis.io.nohappyhour == 0
-		local tics = JISK_PIZZATIMETICS or PTJE.pizzatime_tics
+		local tics = HAPPY_HOUR.time
 		
 		if (tics == 1)
 			hud.ptje.yoffset = 200*FU
@@ -322,12 +317,10 @@ rawset(_G, "TakisHUDStuff", function(p)
 		
 	end
 	
-	if ( ((CV_PTJE) and (CV_PTJE.timelimit.value))
-	or ((JISK_TIMELIMIT) and (JISK_TIMELIMIT.value)) )
+	if HAPPY_HOUR.timelimit
 	
-		if ( ((PTJE) and (PTJE.timeleft))
-		or (JISK_TIMELEFT) )
-			local tics = JISK_TIMELEFT or PTJE.timeleft
+		if HAPPY_HOUR.timeleft
+			local tics = HAPPY_HOUR.timeleft
 			local time = hud.timeshake
 			
 			if tics <= (56*TR)
@@ -835,10 +828,9 @@ rawset(_G, "TakisDoShorts", function(p,me,takis)
 	end
 		
 	//happy hour hud and stuff
-	if (JISK_PIZZATIMETICS)
-	or ((PTJE) and (PTJE.pizzatime_tics))
+	if HAPPY_HOUR.time
 	and takis.io.nohappyhour == 0
-		local tics = JISK_PIZZATIMETICS or PTJE.pizzatime_tics
+		local tics = HAPPY_HOUR.time
 		
 		if (tics == 1)
 			S_StartSound(nil,sfx_mclang)
@@ -898,12 +890,10 @@ rawset(_G, "TakisDoShorts", function(p,me,takis)
 	end
 	
 	//end of happy hour quakes
-	if ( ((CV_PTJE) and (CV_PTJE.timelimit.value))
-	or ((JISK_TIMELIMIT) and (JISK_TIMELIMIT.value)) )
+	if HAPPY_HOUR.timelimit
 	
-		if ( ((PTJE) and (PTJE.timeleft))
-		or (JISK_TIMELEFT) )
-			local tics = JISK_TIMELEFT or PTJE.timeleft
+		if HAPPY_HOUR.timeleft
+			local tics = HAPPY_HOUR.timeleft
 			local time = takis.HUD.timeshake
 			
 			if tics <= (56*TR)
@@ -1273,12 +1263,15 @@ local function CheckAndCrumble(me, sec)
 		if me.z + me.height < fof.bottomheight continue end -- Are we too low?
 		if me.z > fof.topheight continue end -- Are we too high?
 		
-		TakisGiveCombo(me.player,me.player.takistable,true)
+		if (me.type == MT_PLAYER)
+			TakisGiveCombo(me.player,me.player.takistable,true)
+		elseif (me.type == MT_TAKIS_HAMMERHITBOX)
+			TakisGiveCombo(me.parent.player,me.parent.player.takistable,true)		
+		end
 		EV_CrumbleChain(fof) -- Crumble
 	end
 end
 
-//function so bounce and dive can use this without having to copypaste
 rawset(_G, "TakisBreakAndBust", function(p, me)
 	CheckAndCrumble(me, me.subsector.sector)
 end)
@@ -1610,7 +1603,11 @@ local monitorctfteam = {
 	[MT_RING_REDBOX] = 1,
 	[MT_RING_BLUEBOX] = 2	
 }
-rawset(_G, "SpawnRagThing",function(tm,t)
+rawset(_G, "SpawnRagThing",function(tm,t,source)
+	if source == nil
+		source = t
+	end
+	
 	local speed = FixedHypot(t.momx,t.momy)
 	if t.player
 		speed = t.player.takistable.accspeed
@@ -1624,23 +1621,22 @@ rawset(_G, "SpawnRagThing",function(tm,t)
 			tm.tics = -1
 			ragdoll.sprite = tm.sprite
 			ragdoll.color = tm.color
-			ragdoll.angle = R_PointToAngle2(tm.x,tm.y, t.x,t.y)
+			ragdoll.angle = t.angle
 			ragdoll.frame = tm.frame
-			ragdoll.height = tm.height*2
-			ragdoll.radius = tm.radius*2
+			ragdoll.height = tm.height
+			ragdoll.radius = tm.radius
 			ragdoll.scale = tm.scale
 			ragdoll.timealive = 1
-			ragdoll.angle = tm.angle+speed
-			ragdoll.parent2 = t
+			ragdoll.parent2 = source
 			ragdoll.target = tm
 			ragdoll.flags = MF_SOLID|MF_NOCLIPTHING
 			ragdoll.ragdoll = true
 			
 			P_SetObjectMomZ(ragdoll,7*t.scale)
 			
-			local thrust = -63
+			local thrust = 63
 			P_Thrust(ragdoll,ragdoll.angle,
-				thrust*t.scale-FixedMul(speed,t.scale)
+				thrust*t.scale+FixedMul(speed,t.scale)
 			)
 			
 			if P_RandomChance(FRACUNIT/13)
@@ -1664,8 +1660,8 @@ rawset(_G, "SpawnRagThing",function(tm,t)
 			ragdoll.color = tm.color
 			ragdoll.angle = R_PointToAngle2(tm.x,tm.y, t.x,t.y)
 			ragdoll.frame = tm.frame
-			ragdoll.height = tm.height*2
-			ragdoll.radius = tm.radius*2
+			ragdoll.height = tm.height
+			ragdoll.radius = tm.radius
 			ragdoll.scale = tm.scale
 			ragdoll.timealive = 1
 			
@@ -1681,7 +1677,7 @@ rawset(_G, "SpawnRagThing",function(tm,t)
 			P_RemoveMobj(ragdoll)
 		end
 		
-		P_KillMobj(tm,t,t)
+		P_KillMobj(tm,t,source)
 		//S_StopSound(tm)
 		if ((tm) and (tm.valid))
 		and (tm.flags & MF_ENEMY)
@@ -1702,10 +1698,30 @@ rawset(_G, "SpawnRagThing",function(tm,t)
 		ghost.destscale = ghost.scale*3/2
 		ghost.frame = $|TR_TRANS80
 		ghost.blendmode = AST_ADD
-
-		P_DamageMobj(tm,t,t,2)
+		
+		if speed < 60*t.scale
+			P_DamageMobj(tm,t,source,2)
+		else
+			P_KillMobj(tm,t,source)
+		end
 	end
 end)
+
+local getcomnum = {
+	[0] = sfx_comup0,
+	[1] = sfx_comup1,
+	[2] = sfx_comup2,
+	[3] = sfx_comup3,
+	[4] = sfx_comup4,
+	[5] = sfx_comup5,
+	[6] = sfx_comup6,
+	[7] = sfx_comup7,
+	[8] = sfx_comup8,
+	[9] = sfx_comup9,
+	[10] = sfx_comupa,
+	[11] = sfx_comupb,
+	[12] = sfx_comupc
+}
 rawset(_G, "TakisGiveCombo",function(p,takis,add,max,remove)
 	if (p.powers[pw_carry] == CR_NIGHTSMODE)
 	or not (gametyperules & GTR_FRIENDLY)
@@ -1726,6 +1742,7 @@ rawset(_G, "TakisGiveCombo",function(p,takis,add,max,remove)
 		
 		if takis.combo.count == 1
 			S_StartSound(nil,sfx_kc3c,p)
+			takis.HUD.combo.scale = $+(FU/5)
 			if takis.combo.outrotics
 				if takis.combo.failcount >= 50 //TAKIS_NET.partdestoy
 					TakisAwardAchievement(p,ACHIEVEMENT_COMBOALMOST)
@@ -1739,8 +1756,12 @@ rawset(_G, "TakisGiveCombo",function(p,takis,add,max,remove)
 		
 		if not (takis.combo.count % TAKIS_COMBO_UP)
 			takis.HUD.combo.scale = $+(FU/10)
+			S_StartSound(nil,getcomnum[
+					((takis.combo.count/TAKIS_COMBO_UP)-1)%13
+				],
+				p
+			)
 			takis.combo.rank = $+1
-			S_StartSound(nil,sfx_s3kcas,p)
 		end
 		
 		takis.combo.time = TAKIS_MAX_COMBOTIME
@@ -1919,15 +1940,14 @@ rawset(_G, "TakisDeathThinker",function(p,me,takis)
 
 	if (me.rollangle ~= 0)
 	or not (takis.onGround)
-		if p.deadtimer > TR
-			p.deadtimer = TR
-		end
+		p.deadtimer = min(TR,$)
 	end
 	
 	if takis.justHitFloor
 	and (me.sprite2 ~= SPR2_TDD2)
 	and takis.onGround
 	and p.deadtimer > 3
+		me.tics = -1
 		if (me.rollangle == 0)
 			me.frame = A
 			me.sprite2 = SPR2_TDD2
@@ -1986,15 +2006,15 @@ rawset(_G,"TakisDrawBonuses", function(v, p, x, y, flags, salign, dist, angle)
 	local function DoLerp(kind, retract, val)
 		if (p == displayplayer) then
 			if (retract)
-				blerp0[kind] = FixedLerp(blerp0[kind], 0, FU*60/100)
+				blerp0[kind] = FixedLerp(blerp0[kind], 0, FU*45/100)
 			else
-				blerp0[kind] = FixedLerp(blerp0[kind], val, FU*60/100)
+				blerp0[kind] = FixedLerp(blerp0[kind], val, FU*45/100)
 			end
 		else
 			if (retract)
-				blerp1[kind] = FixedLerp(blerp1[kind], 0, FU*60/100)
+				blerp1[kind] = FixedLerp(blerp1[kind], 0, FU*45/100)
 			else
-				blerp1[kind] = FixedLerp(blerp1[kind], val, FU*60/100)
+				blerp1[kind] = FixedLerp(blerp1[kind], val, FU*45/100)
 			end
 		end
 	end
@@ -2646,31 +2666,53 @@ rawset(_G,"TakisMenuThinker",function(p)
 		
 end)
 
-rawset(_G, "prtable", function(text, t, prefix, cycles)
+rawset(_G, "prtable", function(text, t, doprint, prefix, cycles)
     prefix = $ or ""
     cycles = $ or {}
+	if doprint == nil
+		doprint = true
+	end
+	
+	local stringtext = {}
 
-    print(prefix..text.." = {")
-
+	if doprint
+		print(prefix..text.." = {")
+	end
+	
+	table.insert(stringtext,prefix..text.." = {")
+	
     for k, v in pairs(t)
         if type(v) == "table"
             if cycles[v]
-                print(prefix.."    "..tostring(k).." = "..tostring(v))
+				if doprint
+					print(prefix.."    "..tostring(k).." = "..tostring(v))
+				end
+				table.insert(stringtext,prefix.."    "..tostring(k).." = "..tostring(v))
             else
                 cycles[v] = true
-                prtable(k, v, prefix.."    ", cycles)
+                prtable(k, v, doprint, prefix.."    ", cycles)
             end
         elseif type(v) == "string"
-            print(prefix.."    "..tostring(k)..' = "'..v..'"')
+			if doprint
+				print(prefix.."    "..tostring(k)..' = "'..v..'"')
+			end
+			table.insert(stringtext,prefix.."    "..tostring(k)..' = "'..v..'"')
         else
 			if type(v) == "userdata" and v.valid and v.name
 				v = v.name
 			end
-            print(prefix.."    "..tostring(k).." = "..tostring(v))
+			if doprint
+				print(prefix.."    "..tostring(k).." = "..tostring(v))
+			end
+			table.insert(stringtext,prefix.."    "..tostring(k).." = "..tostring(v))
         end
     end
-
-    print(prefix.."}")
+	
+	if doprint
+		print(prefix.."}")
+	end
+	table.insert(stringtext,prefix.."}")
+	return stringtext
 end)
 
 /*
@@ -2704,27 +2746,6 @@ local musdefaults = {
 	["_conga"] = "_chsel",
 	["war"] = "vsbrak"
 }
-
-rawset(_G, "ChangeTakisMusic",function(mus,looping,p)
-	local playert = consoleplayer
-	if p and p.valid
-	and userdataType(p) == "player_t"
-		playert = p
-	end
-	
-	if not playert.takistable.io.ihavemusicwad
-		mus = musdefaults[string.lower(tostring(mus))] or ''
-	end
-	
-	if mus == ''
-	or mus == nil
-		return false
-	end
-	
-	S_ChangeMusic(mus,looping,p)
-	return true
-end)
-
 //returns the music name for a takis song, returns '' if the
 //player doesnt have takismusic.pk3
 rawset(_G, "ReturnTakisMusic",function(mus,p)
@@ -2740,6 +2761,24 @@ rawset(_G, "ReturnTakisMusic",function(mus,p)
 	
 	return mus
 	
+end)
+
+rawset(_G, "ChangeTakisMusic",function(mus,looping,p)
+	local playert = consoleplayer
+	if p and p.valid
+	and userdataType(p) == "player_t"
+		playert = p
+	end
+	
+	mus = ReturnTakisMusic(mus,playert)
+	
+	if mus == ''
+	or mus == nil
+		return false
+	end
+	
+	S_ChangeMusic(mus,looping,p)
+	return true
 end)
 
 rawset(_G, "TakisAddHurtMsg",function(p,enum)
@@ -2785,25 +2824,40 @@ rawset(_G, "TakisResetHammerTime", function(p)
 	takis.hammerblastgroundtime = 0
 end)
 
-rawset(_G, 'L_FixedDecimal', function(str,maxdecimal)
-	if str == nil or tostring(str) == nil
-		return '<invalid FixedDecimal>'
+rawset(_G, "TakisShotgunify", function(p)
+	local takis = p.takistable
+	local me = p.mo
+	
+	if me.skin ~= TAKIS_SKIN
+		return
 	end
-	local number = tonumber(str)
-	maxdecimal = ($ != nil) and $ or 3
-	if tonumber(str) == 0 return '0' end
-	local polarity = abs(number)/number
-	local str_polarity = (polarity < 0) and '-' or ''
-	local str_whole = tostring(abs(number/FRACUNIT))
-	if maxdecimal == 0
-		return str_polarity..str_whole
+	
+	takis.shotgunned = true
+	ChangeTakisMusic("war",true,p)
+	S_StartSound(nil,sfx_shgnl,p)
+	if not ((takis.shotgun) and (takis.shotgun.valid))
+		local x = cos(p.drawangle-ANGLE_90)
+		local y = sin(p.drawangle-ANGLE_90)
+		
+		takis.shotgun = P_SpawnMobjFromMobj(me,16*x,16*y,me.height/2,MT_TAKIS_SHOTGUN)
+		takis.shotgun.target = me
+		takis.shotgun.angle = p.drawangle
 	end
-	local decimal = number%FRACUNIT
-	decimal = FRACUNIT + $
-	decimal = FixedMul($,FRACUNIT*10^maxdecimal)
-	decimal = $>>FRACBITS
-	local str_decimal = string.sub(decimal,2)
-	return str_polarity..str_whole..'.'..str_decimal
+end)
+
+rawset(_G, "TakisDeShotgunify", function(p)
+	local takis = p.takistable
+	local me = p.mo
+	
+	if ((takis.shotgun) and (takis.shotgun.valid))
+		P_KillMobj(takis.shotgun,me)
+	end
+	takis.shotgun = 0
+	takis.shotgunned = false
+	if S_MusicName() == ReturnTakisMusic("war",p)
+		P_RestoreMusic(p)
+	end
+
 end)
 
 filesdone = $+1

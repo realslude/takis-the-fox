@@ -136,8 +136,8 @@ local function calcstatusface(p,takis)
 	local me = p.mo
 	
 	//idle
-	if not ( ((PizzaTime) and (PizzaTime.sync.PizzaTime)) or (JISK_PIZZATIME) 
-	or ((PTJE) and (PTJE.pizzatime)) and not (p.pizzaface) or ultimatemode)
+	if not HAPPY_HOUR.happyhour
+	and not ((p.pizzaface) or ultimatemode)
 		takis.HUD.statusface.state = "IDLE"
 		takis.HUD.statusface.frame = (leveltime/3)%2
 		takis.HUD.statusface.priority = 0
@@ -527,6 +527,11 @@ local function drawlivesarea(v,p)
 
 	if (customhud.CheckType("lives") != modname) return end
 	
+	if p.takistable.inNIGHTSMode
+	or (TAKIS_NET.inspecialstage)
+		return
+	end
+	
 	local textmap = V_YELLOWMAP
 	local candrawlives = true
 	local infinite = false
@@ -880,7 +885,7 @@ local function drawcombostuff(v,p)
 	or takis.combo.outrotics
 		
 		local comboscale = takis.HUD.combo.scale+FU
-		local shake = FixedMul(takis.HUD.combo.shake,comboscale)
+		local shake = -FixedMul(takis.HUD.combo.shake,comboscale)
 		local backx = 15*FU
 		local backy = 70*FU+shake-takis.combo.gravity
 		
@@ -937,6 +942,24 @@ local function drawcombostuff(v,p)
 			V_HUDTRANS|V_ALLOWLOWERCASE|V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER,
 			"thin-fixed"
 		)
+		
+		local scorenum = "CMBCF"
+		local score = takis.combo.count
+		
+		local prevw
+		if not prevw then prevw = 0 end
+		
+		for i = 1,string.len(score)
+			local n = string.sub(score,i,i)
+			v.drawScaled(backx+FixedMul(75*FU+(prevw*FU),comboscale),
+				backy+5*FU,
+				FixedDiv(comboscale,2*FU),
+				v.cachePatch(scorenum+n),
+				V_HUDTRANS|V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER
+			)
+				
+			prevw = $+v.cachePatch(scorenum+n).width*4/10
+		end
 		
 		//draw the verys
 		local maxvery = 19	
@@ -1052,12 +1075,11 @@ local function drawhappyhour(v,p)
 	
 	local takis = p.takistable
 	
-	if ( ((JISK_PIZZATIMETICS) and (JISK_PIZZATIMETICS <= 5*TR))
-	or ((PTJE) and (PTJE.pizzatime_tics) and (PTJE.pizzatime_tics <= 5*TR)) )
+	if (HAPPY_HOUR.time) and (HAPPY_HOUR.time <= 5*TR)
 	
 	and (takis.io.nohappyhour == 0)
 		
-		local tics = JISK_PIZZATIMETICS or ((PTJE) and (PTJE.pizzatime_tics))
+		local tics = HAPPY_HOUR.time
 
 		takis.HUD.happyhour.doingit = true
 		
@@ -1081,44 +1103,46 @@ local function drawhappyhour(v,p)
 		
 		local pa = v.cachePatch
 		
-		v.drawScaled(h.its.x+x, y+h.its.yadd, h.its.scale,
-			pa(h.its.patch..h.its.frame),
-			V_SNAPTOTOP|V_HUDTRANS
-		)
-		v.drawScaled(h.happy.x+x, y+h.happy.yadd, h.happy.scale,
-			pa(h.happy.patch..h.happy.frame),
-			V_SNAPTOTOP|V_HUDTRANS
-		)
-		v.drawScaled(h.hour.x+x, y+h.hour.yadd, h.hour.scale,
-			pa(h.hour.patch..h.hour.frame),
-			V_SNAPTOTOP|V_HUDTRANS
-		)
-		if tics > 4
-			local pat = SPR2_TRNS
-			local scale = 6*FU/5
-			//if this looks weird, i dont care
-			//ADD HHF_ SPRITE!!!!!
-			local frame = G
-			local num = {
-				[0] = A,
-				[1] = B
-			}
-			local skin = me.skin or p.skin
-			local hires = skins[skin].highresscale or FU
-			local yadd = 15*FU
-			
-			if P_IsValidSprite2(me,SPR2_HHF_)
-				pat = SPR2_HHF_
-				scale = 3*FU/5
-				frame = num[h.face.frame]
-				yadd = 0
-			end
-			
-			local face = v.getSprite2Patch(p.skin,pat,false,frame,0,0)
-			v.drawScaled(h.face.x+x, (130*FU)+h.face.yadd+yadd, FixedMul(scale,hires),
-				face,
-				V_HUDTRANS, v.getColormap(nil,p.skincolor)
+		if tics > 1
+			v.drawScaled(h.its.x+x, y+h.its.yadd, h.its.scale,
+				pa(h.its.patch..h.its.frame),
+				V_SNAPTOTOP|V_HUDTRANS
 			)
+			v.drawScaled(h.happy.x+x, y+h.happy.yadd, h.happy.scale,
+				pa(h.happy.patch..h.happy.frame),
+				V_SNAPTOTOP|V_HUDTRANS
+			)
+			v.drawScaled(h.hour.x+x, y+h.hour.yadd, h.hour.scale,
+				pa(h.hour.patch..h.hour.frame),
+				V_SNAPTOTOP|V_HUDTRANS
+			)
+			if tics > 4
+				local pat = SPR2_TRNS
+				local scale = 6*FU/5
+				//if this looks weird, i dont care
+				//ADD HHF_ SPRITE!!!!!
+				local frame = G
+				local num = {
+					[0] = A,
+					[1] = B
+				}
+				local skin = me.skin or p.skin
+				local hires = skins[skin].highresscale or FU
+				local yadd = 15*FU
+				
+				if P_IsValidSprite2(me,SPR2_HHF_)
+					pat = SPR2_HHF_
+					scale = 3*FU/5
+					frame = num[h.face.frame]
+					yadd = 0
+				end
+				
+				local face = v.getSprite2Patch(p.skin,pat,false,frame,0,0)
+				v.drawScaled(h.face.x+x, (130*FU)+h.face.yadd+yadd, FixedMul(scale,hires),
+					face,
+					V_HUDTRANS, v.getColormap(nil,p.skincolor)
+				)
+			end
 		end
 	end
 	
@@ -1177,15 +1201,19 @@ local function drawpizzatimer(v,p)
 		return
 	end
 	
-	if not ( ((PTJE) and (PTJE.pizzatime)) or (JISK_PIZZATIME))
+	if not HAPPY_HOUR.happyhour
 		return
 	end
 	
-	if not (( (JISK_TIMELIMIT) and (JISK_TIMELIMIT.value) ) or (CV_PTJE.timelimit.value))
+	if not HAPPY_HOUR.timelimit
 		return
 	end
 	
-	local tics = ((PTJE) and (PTJE.timeleft)) or JISK_TIMELEFT
+	if HAPPY_HOUR.time == 1
+		return
+	end
+	
+	local tics = HAPPY_HOUR.timeleft
 	
 	local takis = p.takistable
 	
@@ -1211,8 +1239,18 @@ local function drawpizzatimer(v,p)
 	local h = takis.HUD.ptje
 		
 	local frame = ((5*leveltime/6)%14)
-	v.drawScaled(110*FU+(h.xoffset*FU),168*FU+(h.yoffset),FU,v.cachePatch("TAHHS"..frame),V_HUDTRANS|V_SNAPTOBOTTOM)
-	TakisDrawPatchedText(v, 150+(h.xoffset), 173+(h.yoffset/FU), tostring(string),{font = TAKIS_HAPPYHOURFONT, flags = (V_SNAPTOBOTTOM|V_HUDTRANS), align = 'left', scale = 4*FU/5})
+	if not (takis.inNIGHTSMode)
+		v.drawScaled(110*FU+(h.xoffset*FU),168*FU+(h.yoffset),FU,v.cachePatch("TAHHS"..frame),V_HUDTRANS|V_SNAPTOBOTTOM)
+		TakisDrawPatchedText(v, 150+(h.xoffset), 173+(h.yoffset/FU), tostring(string),{font = TAKIS_HAPPYHOURFONT, flags = (V_SNAPTOBOTTOM|V_HUDTRANS), align = 'left', scale = 4*FU/5})
+	else
+		if (p.exiting) then return end
+		
+		v.drawScaled(100*FU,10*FU-(h.yoffset),
+			FU,v.cachePatch("TAHHS"..frame),
+			V_HUDTRANS|V_SNAPTOTOP
+		)
+	
+	end
 end
 
 local function drawtelebar(v,p)
@@ -1270,15 +1308,17 @@ local function drawpizzatips(v,p)
 		return
 	end
 	
+	local takis = p.takistable
+	local h = takis.HUD.ptje
+	
+	h.xoffset = 0
+	
 	if not ( ((PTJE) and (PTJE.pizzatime)) or (JISK_PIZZATIME))
 		return
 	end
 	
 	local tics = JISK_PIZZATIMETICS or PTJE.pizzatime_tics
 
-	
-	local takis = p.takistable
-	local h = takis.HUD.ptje
 	
 	local text,num = getlaptext(p)
 	local exitingCount, playerCount = JISK_COUNT()
@@ -1288,21 +1328,20 @@ local function drawpizzatips(v,p)
 	end
 	
 	if tics > 3
-	if playerCount == 1
-		v.drawString((85+h.xoffset)*FU,(160-16)*FU+(h.yoffset),"\x88".."Exercise",V_ALLOWLOWERCASE|V_HUDTRANS|V_SNAPTOBOTTOM|V_RETURN8,"thin-fixed-center")
-		v.drawString((85+h.xoffset)*FU,(160-8)*FU+(h.yoffset),"\x88".."Mode",V_ALLOWLOWERCASE|V_HUDTRANS|V_SNAPTOBOTTOM|V_RETURN8,"thin-fixed-center")
-	end
-	
-	if num ~= 'dontdraw'
-		h.xoffset = 31
-		
-		v.drawScaled(65*FU+(h.xoffset*FU),170*FU+(h.yoffset),3*FU/5,v.cachePatch("TA_LAPFLAG"),V_HUDTRANS|V_SNAPTOBOTTOM)
-		v.drawString((85+h.xoffset)*FU,(160)*FU+(h.yoffset),text,V_ALLOWLOWERCASE|V_HUDTRANS|V_SNAPTOBOTTOM|V_RETURN8,"thin-fixed-center")
+		if num ~= 'dontdraw'
+			h.xoffset = 31
+			
+			v.drawScaled(65*FU+(h.xoffset*FU),170*FU+(h.yoffset),3*FU/5,v.cachePatch("TA_LAPFLAG"),V_HUDTRANS|V_SNAPTOBOTTOM)
+			v.drawString((85+h.xoffset)*FU,(160)*FU+(h.yoffset),text,V_ALLOWLOWERCASE|V_HUDTRANS|V_SNAPTOBOTTOM|V_RETURN8,"thin-fixed-center")
 
-		v.drawString((85+h.xoffset)*FU,(177)*FU+(h.yoffset),num,V_PURPLEMAP|V_ALLOWLOWERCASE|V_HUDTRANS|V_SNAPTOBOTTOM|V_RETURN8,"fixed-center")
-	else
-		h.xoffset = 0
-	end
+			v.drawString((85+h.xoffset)*FU,(177)*FU+(h.yoffset),num,V_PURPLEMAP|V_ALLOWLOWERCASE|V_HUDTRANS|V_SNAPTOBOTTOM|V_RETURN8,"fixed-center")
+		end
+		
+		if playerCount == 1
+			v.drawString((85+h.xoffset)*FU,(160-16)*FU+(h.yoffset),"\x88".."Exercise",V_ALLOWLOWERCASE|V_HUDTRANS|V_SNAPTOBOTTOM|V_RETURN8,"thin-fixed-center")
+			v.drawString((85+h.xoffset)*FU,(160-8)*FU+(h.yoffset),"\x88".."Mode",V_ALLOWLOWERCASE|V_HUDTRANS|V_SNAPTOBOTTOM|V_RETURN8,"thin-fixed-center")
+		end
+		
 	end
 	
 	if p.stuntime
@@ -2074,7 +2113,21 @@ local function drawdebug(v,p)
 		end
 		v.drawString(40,-8,L_FixedDecimal(takis.quakeint,3),V_HUDTRANS,"left")
 	end
-	
+	if (TAKIS_DEBUGFLAG & DEBUG_HAPPYHOUR)
+		local strings = prtable("Happy Hour",HAPPY_HOUR,false)
+		for k,va in ipairs(strings)
+			v.drawString(100,30+(8*(k-1)),va,V_ALLOWLOWERCASE,"left")
+		end
+		
+	end
+	if (TAKIS_DEBUGFLAG & DEBUG_ALIGNER)
+		v.draw(160,100,v.cachePatch("ALIGNER"),V_20TRANS)
+		v.drawString(hudinfo[HUD_LIVES].x+68,hudinfo[HUD_LIVES].y+8,
+			L_FixedDecimal(takis.accspeed,3),
+			V_HUDTRANS|V_SNAPTOBOTTOM|V_SNAPTOLEFT,
+			"thin"
+		)
+	end
 end
 
 //draw the stuff
@@ -2110,10 +2163,12 @@ addHook("HUD", function(v,p)
 		return
 	end
 	
+	/*
 	if p.takistable.inNIGHTSMode
 	or (TAKIS_NET.inspecialstage)
 		return
 	end
+	*/
 	
 	local takis = p.takistable
 	local me = p.mo
@@ -2393,7 +2448,6 @@ addHook("HUD", function(v,p)
 			takis.HUD.menutext.tics = $-1
 		end
 	
-		//v.draw(160,100,v.cachePatch("ALIGNER"),V_20TRANS)
 		drawdebug(v,p)
 	end
 end)

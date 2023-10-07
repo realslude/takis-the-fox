@@ -125,8 +125,8 @@ local function collide2(me,mob)
 	return true
 end
 //lazy
-local function spawnragthing(tm,t)
-	SpawnRagThing(tm,t)
+local function spawnragthing(tm,t,source)
+	SpawnRagThing(tm,t,source)
 end
 local function LaunchTargetFromInflictor(type,target,inflictor,basespeed,speedadd)
 	if (string.lower(type) == "instathrust") or type == 1
@@ -791,17 +791,7 @@ addHook("PlayerThink", function(p)
 				//un-shotgun
 				if takis.c3 == 1
 				and takis.shotgunned
-					if ((takis.shotgun) and (takis.shotgun.valid))
-						P_KillMobj(takis.shotgun,me)
-					end
-					takis.shotgun = 0
-					takis.shotgunned = false
-					if mapmusname ~= mapheaderinfo[gamemap].musname
-						mapmusname = mapheaderinfo[gamemap].musname
-					end
-					if ((S_MusicName() == "WAR") or (S_MusicName() == "war"))
-						P_RestoreMusic(p)
-					end
+					TakisDeShotgunify(p)
 				end
 				
 				if takis.c3 == TR
@@ -962,6 +952,7 @@ addHook("PlayerThink", function(p)
 					else
 						P_MoveOrigin(takis.hammerblasthitbox,me.x+(42*x)+me.momx,me.y+(42*y)+me.momy,me.z-(3*me.height/2)+me.momz)
 					end
+					TakisBreakAndBust(p,takis.hammerblasthitbox)
 				end
 				
 				if (me.momz*takis.gravflip <= -40*me.scale)
@@ -1328,6 +1319,7 @@ addHook("PlayerThink", function(p)
 				//footsteps
 				if me.state == S_PLAY_WALK
 				or me.sprite2 == SPR2_WALK
+				and (me.health)
 					if ((me.frame == A) or (me.frame == E))
 						if not takis.steppedthisframe
 							local sfx = P_RandomRange(sfx_takst1,sfx_takst3)
@@ -1444,12 +1436,9 @@ addHook("PlayerThink", function(p)
 			or (p.playerstate ~= PST_LIVE)
 				
 				TakisDeathThinker(p,me,takis)
-
-				if ((takis.shotgun) and (takis.shotgun.valid))
-					P_KillMobj(takis.shotgun,me)
+				if (takis.shotgunned)
+					TakisDeShotgunify(p)
 				end
-				takis.shotgun = 0
-				takis.shotgunned = false
 				
 				if ((takis.body) and (takis.body.valid))
 					P_MoveOrigin(takis.body,me.x,me.y,me.z)
@@ -1524,6 +1513,7 @@ addHook("PlayerThink", function(p)
 				if takis.combo.lastcount < TAKIS_NET.partdestroy
 				and takis.combo.count >= TAKIS_NET.partdestroy
 				and not takis.combo.dropped
+				and (gametype == GT_COOP)
 					takis.combo.awardable = true
 					takis.HUD.combo.tokengrow = FU/2
 					MeSoundHalfVolume(sfx_rakupp,p)
@@ -1539,11 +1529,7 @@ addHook("PlayerThink", function(p)
 			else
 				takis.combo.frozen = false
 				takis.combo.cashable = false
-				if takis.HUD.combo.shake > 0
-					takis.HUD.combo.shake = $-1
-				else
-					takis.HUD.combo.shake = 0
-				end
+				takis.HUD.combo.shake = 0
 				
 				if takis.combo.count
 					takis.combo.failcount = takis.combo.count
@@ -1810,11 +1796,10 @@ addHook("PlayerThink", function(p)
 			
 			takis.combo.time = 0
 			TakisAnimateHappyHour(p)
-			if (JISK_PIZZATIMETICS)
-			or ((PTJE) and (PTJE.pizzatime_tics))
+			if HAPPY_HOUR.time
 			and (takis.io.nohappyhour == 0
 			and takis.io.morehappyhour == 1)
-				local tics = JISK_PIZZATIMETICS or PTJE.pizzatime_tics
+				local tics = HAPPY_HOUR.time
 				
 				if (tics == 1)
 					S_StartSound(nil,sfx_mclang)
@@ -1836,19 +1821,9 @@ addHook("PlayerThink", function(p)
 				
 			end
 			
-			if ((takis.shotgun) and (takis.shotgun.valid))
-				P_KillMobj(takis.shotgun,me)
-				if mapmusname ~= mapheaderinfo[gamemap].musname
-					mapmusname = mapheaderinfo[gamemap].musname
-				end
-				if ((S_MusicName() == "WAR") or (S_MusicName() == "war"))
-					P_RestoreMusic(p)
-				end
-				
+			if (takis.shotgunned)
+				TakisDeShotgunify(p)
 			end
-			takis.shotgun = 0
-			takis.shotgunned = false			
-			
 		end
 		
 		//outside of shorts (and skin check!!!!) to check for
@@ -1906,6 +1881,7 @@ addHook("PlayerSpawn", function(p)
 		local me = p.realmo
 		
 		TakisResetHammerTime(p)
+		TakisDeShotgunify(p)
 		
 		takis.heartcards = TAKIS_MAX_HEARTCARDS
 		takis.heartcardpieces = 0
@@ -1966,21 +1942,8 @@ addHook("PlayerSpawn", function(p)
 		takis.thingsdestroyed = 0
 		
 		if ultimatemode
-		and not (TAKIS_NET.inspecialstage or takis.inNIGHTSMode)
-			if not ((takis.shotgun) and (takis.shotgun.valid))
-				local x = cos(p.drawangle-ANGLE_90)
-				local y = sin(p.drawangle-ANGLE_90)
-				
-				takis.shotgunned = true
-				takis.shotgun = P_SpawnMobjFromMobj(me,16*x,16*y,me.height/2,MT_TAKIS_SHOTGUN)
-				takis.shotgun.target = me
-				takis.shotgun.angle = p.drawangle
-				S_StartSound(nil,sfx_shgnl,p)
-				ChangeTakisMusic("war",true,p)
-				if (takis.io.ihavemusicwad)
-					mapmusname = "war"
-				end
-			end
+		and not (G_IsSpecialStage(gamemap) or maptol & TOL_NIGHTS)
+			TakisShotgunify(p)
 		end
 	else
 		if ultimatemode
@@ -2128,7 +2091,7 @@ addHook("MobjDamage", function(mo,inf,sor,_,dmgt)
 	
 	if (mo.player.powers[pw_shield] == SH_ARMAGEDDON)
 		TakisPowerfulArma(mo.player)
-		
+		return true
 	end
 	
 	//combo penalty
@@ -2269,7 +2232,7 @@ local function knockbacklolll(t,tm)
 	//is this a player we're running into?
 	if tm.type == MT_PLAYER
 		if t.skin == TAKIS_SKIN
-			if (tm.player.takistable.accspeed < 60*FU)
+			if (takis.accspeed < 60*FU)
 				//are we both afterimaging?
 				if ((takis.afterimaging) and (tm.player.takistable.afterimaging))
 					//heartcard priority
@@ -2344,9 +2307,11 @@ local function knockbacklolll(t,tm)
 				end
 			//going fast turns the other person into mush
 			else
+				//this strangly still kills momentum,,,
+				//ehh whatever
 				
 				//are we both afterimaging?
-				if ((takis.afterimaging) and (t.player.takistable.afterimaging))
+				if ((takis.afterimaging) and (tm.player.takistable.afterimaging))
 					
 					//we have to be going faster than the other guy
 					if takis.accspeed > tm.player.takistable.accspeed
@@ -2357,11 +2322,11 @@ local function knockbacklolll(t,tm)
 						S_StartSound(t,sfx_bsnipe)
 						
 						TakisAddHurtMsg(tm.player,HURTMSG_CLUTCH)
-						P_KillMobj(tm,t,t,4)
+						P_DamageMobj(tm,t,t,1,DMG_INSTAKILL)
 						
 						LaunchTargetFromInflictor(1,t,tm,63*t.scale,takis.accspeed/5)
 						P_MovePlayer(tm.player)
-						
+						return true
 					else
 						dodisciplinaryaction(t,tm,true)
 					end
@@ -2375,11 +2340,11 @@ local function knockbacklolll(t,tm)
 						S_StartSound(t,sfx_bsnipe)
 						
 						TakisAddHurtMsg(tm.player,HURTMSG_CLUTCH)
-						P_KillMobj(tm,t,t,4)
+						P_DamageMobj(tm,t,t,1,DMG_INSTAKILL)
 						
 						LaunchTargetFromInflictor(1,t,tm,63*t.scale,takis.accspeed/5)
 						P_MovePlayer(tm.player)
-					
+						return true
 					else
 						dodisciplinaryaction(t,tm,true)
 					end
@@ -2645,7 +2610,7 @@ local function givecardpieces(mo, _, source)
 		
 		if mo.takis_givecombotime
 		or mo.takis_givecardpieces
-			P_AddPlayerScore(source.player,10)
+			P_AddPlayerScore(source.player,((source.player.takistable.accspeed>>16)/2) * 65)
 		end
 		
 	end
@@ -2697,10 +2662,12 @@ local function hurtbytakis(mo,inf,sor)
 				sor.player.takistable.thokked = false
 				sor.player.pflags = $ &~PF_THOKKED
 			end
+			/*
 			if inf.type == MT_THROWNSCATTER
 			and inf.shotbytakis
-				spawnragthing(mo,inf)
+				spawnragthing(mo,inf,sor)
 			end
+			*/
 		end
 		
 		if ((mo.flags & MF_ENEMY) or (mo.flags & MF_BOSS))
@@ -2770,6 +2737,8 @@ addHook("MobjDeath", function(mo,_,_,dmgt)
 	S_StopSoundByID(mo,sfx_antow3)
 	S_StopSoundByID(mo,sfx_antow4)
 	S_StopSoundByID(mo,sfx_antow5)
+	S_StopSoundByID(mo,sfx_antow6)
+	S_StopSoundByID(mo,sfx_antow7)
 	
 end,MT_PLAYER)
 addHook("AbilitySpecial", function(p)

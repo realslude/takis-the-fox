@@ -26,6 +26,8 @@ local dbgflags = {
 	"PAIN",
 	"ACH",
 	"QUAKE",
+	"HAPPYHOUR",
+	"ALIGNER",
 }
 for k,v in ipairs(dbgflags)
 	rawset(_G,"DEBUG_"..v,1<<(k-1))
@@ -344,12 +346,6 @@ rawset(_G, "TakisInitTable", function(p)
 			[HURTMSG_HAMMERQUAKE] = {text = "Earthquake",tics = 0},
 			[HURTMSG_ARMA] = {text = "Armageddon Shield",tics = 0},
 		},
-		happyhour = {
-			gt = false,
-			on = false,
-			time = 0,
-			timeleft = 0,
-		},
 		bonuses = {
 			["shotgun"] = {
 				tics = 0, 
@@ -493,7 +489,7 @@ rawset(_G, "TakisInitTable", function(p)
 					scale = FU/20,
 					expectedtime = TR,
 					x = 60*FU,
-					yadd = 0, 
+					yadd = -200*FU, 
 					patch = "TAHY_ITS",
 					frame = 0,
 				},
@@ -501,7 +497,7 @@ rawset(_G, "TakisInitTable", function(p)
 					scale = FU/20,
 					expectedtime = 3*TR/2,
 					x = 155*FU,
-					yadd = 0, 
+					yadd = 100*FU, 
 					patch = "TAHY_HAPY",
 					frame = 0,
 				},
@@ -509,14 +505,14 @@ rawset(_G, "TakisInitTable", function(p)
 					scale = FU/20,
 					expectedtime = 2*TR,
 					x = 260*FU,
-					yadd = 0, 
+					yadd = 100*FU, 
 					patch = "TAHY_HOUR",
 					frame = 0,
 				},
 				face = {
 					x = 155*FU,
 					expectedtime = TR,
-					yadd = 0,
+					yadd = -200*FU,
 					frame = 0,
 					
 				}
@@ -715,6 +711,16 @@ SafeFreeslot("sfx_didbad")
 sfxinfo[sfx_didbad].caption = "/"
 SafeFreeslot("sfx_fastfl")
 sfxinfo[sfx_fastfl].caption = "/"
+for i = 0, 9
+	SafeFreeslot("sfx_comup"..i)
+	sfxinfo[sfx_comup0 + i].caption = "\x83".."Combo up!\x80"
+end
+SafeFreeslot("sfx_comupa")
+SafeFreeslot("sfx_comupb")
+SafeFreeslot("sfx_comupc")
+sfxinfo[sfx_comupa].caption = "\x83".."Combo up!\x80"
+sfxinfo[sfx_comupb].caption = "\x83".."Combo up!\x80"
+sfxinfo[sfx_comupc].caption = "\x83".."Combo up!\x80"
 
 --spr_ freeslot
 
@@ -770,6 +776,7 @@ states[S_PLAY_TAKIS_SMUGASSGRIN2] = {
     tics = -1,
     nextstate = S_PLAY_STND
 }
+
 freeslot("S_TAKIS_SWEAT1")
 freeslot("S_TAKIS_SWEAT2")
 freeslot("S_TAKIS_SWEAT3")

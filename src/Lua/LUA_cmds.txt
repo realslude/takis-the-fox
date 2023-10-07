@@ -35,11 +35,11 @@ COM_AddCommand("takis_nohappyhour", function(p)
 	if p.takistable.io.nohappyhour == 0
 		p.takistable.io.nohappyhour = 1
 		prn(p,skins[TAKIS_SKIN].realname.." will no longer show Happy Hour things in Jisk's Pizza Time.")
-		P_RestoreMusic(p)
+		COM_BufInsertText(p,"tunes -default")
 	else
 		p.takistable.io.nohappyhour = 0
 		prn(p,skins[TAKIS_SKIN].realname.." will now show Happy Hour things in Jisk's Pizza Time.")
-		P_RestoreMusic(p)
+		COM_BufInsertText(p,"tunes -default")
 	end
 	
 	TakisSaveStuff(p)
@@ -58,9 +58,11 @@ COM_AddCommand("takis_happyhourstyle", function(p)
 	if p.takistable.io.happyhourstyle == 1
 		p.takistable.io.happyhourstyle = 2
 		prn(p,"Set Happy Hour style to Old")
+		COM_BufInsertText(p,"tunes -default")
 	else
 		p.takistable.io.happyhourstyle = 1
 		prn(p,"Set Happy Hour style to New")
+		COM_BufInsertText(p,"tunes -default")
 	end
 	
 	TakisSaveStuff(p)
@@ -559,6 +561,16 @@ COM_AddCommand("shield", function(p,sh)
 		P_SpawnShieldOrb(p)
 	end
 	
+end,COM_ADMIN)
+
+COM_AddCommand("leave", function(p)
+	if gamestate ~= GS_LEVEL
+		prn(p,"You can't use this right now.")
+		return
+	end
+	
+	P_DoPlayerExit(p)
+	p.exiting = 4
 end,COM_ADMIN)
 
 COM_AddCommand("takis_ihavethemusicwad", function(p)

@@ -40,7 +40,11 @@ addHook("MapChange", function(mapid)
 			TAKIS_MAX_HEARTCARDS = tonumber(mapheaderinfo[mapid].takis_maxheartcards)
 		end
 	end
-		
+	
+end)
+
+addHook("MapChange", do
+	HH_Reset()
 end)
 
 addHook("MapLoad", function(mapid)
@@ -309,7 +313,6 @@ addHook("MobjThinker",function(AA)
 	or not AA.valid
 		return
 	end
-	
 	local flip = P_MobjFlip(AA)
 	if AA.timealive <= 10
 		AA.z = $ - ((10-AA.timealive)*FU)*flip
@@ -317,10 +320,7 @@ addHook("MobjThinker",function(AA)
 		AA.z = $ + ((AA.timealive-10)*FU)*flip
 		AA.destscale = 0
 	end
-	
-	
 	AA.timealive = $+1
-	
 end,MT_TAKIS_BADNIK_RAGDOLL_A)
 
 addHook("MobjThinker", function(rag)
@@ -343,6 +343,25 @@ addHook("MobjThinker", function(rag)
 		poof.scalespeed = FRACUNIT/4
 		poof.fuse = 10				
 	end
+	//do hitboxes
+		local px = rag.x
+		local py = rag.y
+		local br = FixedDiv(rag.radius*5/2,2*FU)
+		searchBlockmap("objects", function(rag, found)
+			if found and found.valid
+			and (found.health)
+			and (L_ZCollide(rag,found))
+				if (found.flags & (MF_ENEMY|MF_BOSS))
+				or (found.flags & MF_MONITOR)
+				and (found.type ~= MT_EGGMAN_BOX)
+					SpawnRagThing(found,rag,rag.parent2)
+				elseif (SPIKE_LIST[found.type] == true)
+					P_KillMobj(found,rag,rag.parent2)
+				end
+			end
+		end, rag, px-br, px+br, py-br, py+br)		
+	//
+	
 	rag.angle = $-ANG10
 	if rag.speed == 0
 	or ((P_IsObjectOnGround(rag)) and (rag.timealive > 4))
@@ -352,7 +371,7 @@ addHook("MobjThinker", function(rag)
 
 		local px = rag.x
 		local py = rag.y
-		local br = 300*rag.scale
+		local br = 420*rag.scale
 		local h = 20
 		
 		if TAKIS_ISDEBUG
@@ -386,19 +405,36 @@ addHook("MobjThinker", function(rag)
 		local helper = P_SpawnGhostMobj(rag)
 		helper.flags2 = $|MF2_DONTDRAW
 		helper.fuse = 5
-		helper.target = rag.target
+		helper.parent2 = rag.parent2
 		searchBlockmap("objects", function(helper, found)
 			if found and found.valid
 			and (found.health)
 				if (found.flags & (MF_ENEMY|MF_BOSS))
 				or (found.flags & MF_MONITOR)
 				and (found.type ~= MT_EGGMAN_BOX)
-					SpawnRagThing(found,helper.target)
+					SpawnRagThing(found,helper,helper.parent2)
 				elseif (SPIKE_LIST[found.type] == true)
-					P_KillMobj(found,helper,helper.tracer)
+					P_KillMobj(found,helper,helper.parent2)
 				end
 			end
 		end, helper, px-br, px+br, py-br, py+br)		
+		
+		for i = 0,4
+			local ring = P_SpawnMobjFromMobj(rag,
+				0,0,0,MT_WINDRINGLOL
+			)
+			if (ring and ring.valid)
+				ring.renderflags = RF_FLOORSPRITE
+				ring.frame = $|FF_TRANS50
+				ring.startingtrans = FF_TRANS50
+				ring.scale = FixedMul(rag.scale,5*FU-(i*3*FU/2))
+				ring.fuse = 10
+				ring.destscale = FixedMul(ring.scale,2*FU)
+				ring.scalespeed = 3*FU/2-(i*FU/2)
+				ring.colorized = true
+				ring.color = SKINCOLOR_WHITE
+			end
+		end
 		
 		local f = P_SpawnGhostMobj(rag)
 		f.flags2 = $|MF2_DONTDRAW
@@ -685,9 +721,10 @@ local specsongs = {
 	["hpyhr2"] = true,
 	["_drown"] = true,
 	["_inter"] = true,
+	["_clear"] = true,
 }
 
-local function happyhourmus(oldname, newname, _,_,_,prefade,fade)
+local function happyhourmus(oldname, newname, mflags,looping,pos,prefade,fade)
 	if splitscreen
 		return
 	end
@@ -700,7 +737,7 @@ local function happyhourmus(oldname, newname, _,_,_,prefade,fade)
 		return
 	end
 	
-	if (consoleplayer.takistable.happyhour.gt)
+	if (HAPPY_HOUR.happyhour)
 	
 		if (consoleplayer.takistable.io.nohappyhour == 1)
 			return
@@ -716,7 +753,7 @@ local function happyhourmus(oldname, newname, _,_,_,prefade,fade)
 			return
 		end
 		
-		local pizzatime = ((PTJE) and (PTJE.pizzatime_tics)) or ((PTBE) and (PTBE.pizzatime_tics))
+		local pizzatime = HAPPY_HOUR.happyhour
 		newname = string.lower(newname)
 		
 		//stop any lap music
@@ -725,13 +762,11 @@ local function happyhourmus(oldname, newname, _,_,_,prefade,fade)
 		
 			local changetohappy = true
 			
-			if ( ((CV_PTJE) and (CV_PTJE.timelimit.value))
-			or ((JISK_TIMELIMIT) and (JISK_TIMELIMIT.value)) )
+			if HAPPY_HOUR.timelimit
 			and (consoleplayer.takistable.io.happyhourstyle == 1)
 				
-				if ( ((PTJE) and (PTJE.timeleft))
-				or (JISK_TIMELEFT) )
-					local tics = JISK_TIMELEFT or PTJE.timeleft
+				if HAPPY_HOUR.timeleft
+					local tics = HAPPY_HOUR.timeleft
 					
 					if tics <= (56*TR)
 						changetohappy = false
@@ -741,21 +776,18 @@ local function happyhourmus(oldname, newname, _,_,_,prefade,fade)
 			
 			if changetohappy
 				if oldname ~= song
-//					ChangeTakisMusic(song, true, consoleplayer,0,0,prefade,fade)
-					return ReturnTakisMusic(song,consoleplayer)
+					return ReturnTakisMusic(song,consoleplayer),mflags,looping,pos,prefade,fade
 				end
 			
 			else
-				if oldname ~= "HPYHRE"
-					//ChangeTakisMusic("HPYHRE", false, consoleplayer)
-					return ReturnTakisMusic("HPYHRE",consoleplayer)
+				if oldname ~= "hpyhre"
+					return ReturnTakisMusic("hpyhre",consoleplayer),mflags,looping,pos,prefade,fade
 				end
 			end
 			
 			return true
 		end
 		
-	/*
 	else
 
 		if (multiplayer or netgame)
@@ -768,19 +800,9 @@ local function happyhourmus(oldname, newname, _,_,_,prefade,fade)
 		
 		local newname = string.lower(newname)
 		
-		if (newname ~= "war")
-		and not ((newname == "_shoes") or
-		(newname == "_inv") or (newname == "_minv")
-		or (newname == "_1up") or (newname == "_clear")
-		or (newname == "_abclr") or (newname == "_drown"))
-			
-			if (oldname ~= "WAR")
-				S_ChangeMusic("WAR", true, consoleplayer)
-			end
-			
-			return true
+		if (specsongs[newname] ~= true)
+			return ReturnTakisMusic("war",consoleplayer),mflags,looping,pos,prefade,fade
 		end
-	*/
 	end
 end
 addHook("MusicChange", happyhourmus)
@@ -928,16 +950,7 @@ addHook("MobjMoveCollide",function(shot,mo)
 	end
 	
 	if (mo.flags & MF_MONITOR)
-		P_KillMobj(mo,shot,shot.tracer)
-		if shot.critcharged
-			return true
-		end
-	end
-	if (mo.type == MT_PLAYER)
-		if shot.critcharged
-			P_DamageMobj(mo,shot,shot.tracer,10)
-			return true
-		end
+		SpawnRagThing(mo,shot,shot.tracer)
 	end
 	
 	if (mo.type == MT_BOMBSPHERE
@@ -948,10 +961,8 @@ addHook("MobjMoveCollide",function(shot,mo)
 	end
 	
 	if (mo.flags & (MF_ENEMY|MF_BOSS))
-		if shot.critcharged
-			P_DamageMobj(mo,shot,shot.tracer,10)
-			return true
-		end
+		SpawnRagThing(mo,shot,shot.tracer)
+		return true
 	end
 	
 end,MT_THROWNSCATTER)
@@ -1074,7 +1085,7 @@ addHook("PreThinkFrame",function()
 			continue
 		end
 		
-		//p.happyhourscream = {}
+		//p.HAPPY_HOURscream = {}
 		
 		if not p.takistable
 			continue
@@ -1235,53 +1246,27 @@ addHook("MobjThinker",function(me)
 		end
 	end
 	
-	local px = me.x
-	local py = me.y
-	local br = 125*me.scale
-	/*
-	local h = 8
-	local m = h/2
-
-	if TAKIS_ISDEBUG
-		for i = 0,m
-			local f1 = P_SpawnMobj(px-br,py-br,me.z+((h*FU)*i),MT_THOK)
-			f1.tics = -1
-			f1.fuse = TR
-			f1.sprite = SPR_RING
-		end
-		for i = 0,m
-			local f2 = P_SpawnMobj(px-br,py+br,me.z+((h*FU)*i),MT_THOK)
-			f2.tics = -1
-			f2.fuse = TR
-			f2.sprite = SPR_RING
-		end
-		for i = 0,m
-			local f3 = P_SpawnMobj(px+br,py-br,me.z+((h*FU)*i),MT_THOK)
-			f3.tics = -1
-			f3.fuse = TR
-			f3.sprite = SPR_RING
-		end
-		for i = 0,m
-			local f4 = P_SpawnMobj(px+br,py+br,me.z+((h*FU)*i),MT_THOK)
-			f4.tics = -1
-			f4.fuse = TR
-			f4.sprite = SPR_RING
-		end
-	end
-	*/
+	local br = 145*me.scale
 	
-	searchBlockmap("objects", function(me, found)
-		if found and found.valid
-		and found.health
-		and P_CheckSight(me,found)
-			
-			if found.skin ~= TAKIS_SKIN
-				return
+	for p in players.iterate
+		if p and p.valid
+		and p.realmo.health
+		and P_CheckSight(me,p.realmo)
+				
+			if p.mo.skin ~= TAKIS_SKIN
+				continue
 			end
-		
-			if (found.type == MT_PLAYER)
+			
+			local dx = me.x-p.mo.x
+			local dy = me.y-p.mo.y
+			
+			if FixedHypot(dx,dy) > br
+				continue
+			end
+			
 			//thanks Monster Iestyn for this!
-			and (found.player and found.player == displayplayer)
+			if (p and p == displayplayer)
+				local found = p.mo
 				
 				local x,y = ReturnTrigAngles(R_PointToAngle2(me.x,me.y, found.x,found.y))
 				if found.flags2 & MF2_TWOD
@@ -1331,7 +1316,7 @@ addHook("MobjThinker",function(me)
 				--
 			end
 		end
-	end, me, px-br, px+br, py-br, py+br)
+	end
 	
 end,MT_STARPOST)
 
@@ -1411,6 +1396,38 @@ addHook("MobjSpawn",function(drone)
 		drone.dispoffset = -1
 	end
 end,MT_EGGCAPSULE)
+
+addHook("MobjThinker",function(drone)
+	if not drone
+	or not drone.valid
+		return
+	end
+	
+	if not (maptol & TOL_NIGHTS)
+		return
+	end
+	
+	if not (drone.flags & MF_NOGRAVITY)
+	and drone.hadnograv
+	and not multiplayer
+		local coolp = server
+		local i = 0
+		for p in players.iterate
+			if i == 0
+				coolp = p
+			end
+			
+			if (skins[p.skin].name ~= TAKIS_SKIN)
+				return
+			end
+			i = $+1
+		end
+		HH_Trigger(coolp.nightstime)
+	end
+	
+	drone.hadnograv = drone.flags & MF_NOGRAVITY
+end,MT_EGGCAPSULE)
+
 
 local nightsthings = {
 	[MT_RING] = true,

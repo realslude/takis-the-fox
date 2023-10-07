@@ -1,11 +1,70 @@
 //happy hour stuff
 
 rawset(_G,"HAPPY_HOUR",{
-	gt = {
-		/*EX.
-		[GT_COOP] = true,
-		*/
-	},
+	happyhour = false,
+	timelimit = 0,
+	timeleft = 0,
+	time = 0,
 })
+local hh = HAPPY_HOUR
+
+rawset(_G,"HH_Trigger",function(timelimit)
+	if hh.happyhour == true
+		return
+	end
+	
+	if timelimit ~= nil
+		hh.timelimit = timelimit
+	end
+	hh.happyhour = true
+	for p in players.iterate
+		ChangeTakisMusic("HAPYHR",p)
+	end
+end)
+rawset(_G,"HH_Reset",function()
+	hh.happyhour = false
+	hh.timelimit = 0
+	hh.timeleft = 0
+	hh.time = 0
+end)
+
+addHook("ThinkFrame",do
+	if (gamestate == GS_LEVEL)
+		if (leveltime < 3)
+			return
+		end
+		
+		//cool
+		if (gametype == GT_PIZZATIMEJISK)
+			hh.happyhour = PTJE.pizzatime
+			hh.timelimit = CV_PTJE.timelimit.value*TICRATE*60 or 0
+			hh.timeleft = PTJE.timeleft
+			hh.time = PTJE.pizzatime_tics
+		end
+		
+		if hh.happyhour
+			
+			if (hh.timelimit)
+				hh.timeleft = hh.timelimit-hh.time
+				if hh.timeleft == 0
+					return
+				end
+			end
+			
+			hh.time = $+1
+		else
+			hh.timelimit = 0
+			hh.timeleft = 0
+			hh.time = 0
+		end
+	else
+		if hh.happyhour
+			hh.timelimit = 0
+			hh.timeleft = 0
+			hh.time = 0
+			hh.happyhour = false
+		end
+	end
+end)
 
 filesdone = $+1
