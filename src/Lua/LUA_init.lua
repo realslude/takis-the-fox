@@ -28,6 +28,8 @@ local dbgflags = {
 	"QUAKE",
 	"HAPPYHOUR",
 	"ALIGNER",
+	"PFLAGS",
+	"BLOCKMAP",
 }
 for k,v in ipairs(dbgflags)
 	rawset(_G,"DEBUG_"..v,1<<(k-1))
@@ -82,6 +84,7 @@ rawset(_G, "TAKIS_COMBO_RANKS", {
 	"\x82".."De".."\x8D".."lu".."\x85".."sio".."\x8D".."na".."\x82".."l!",
 	"\x85Property DAMAGE!!",
 	pnk.."Lovely!",
+	"\x83Lookin' Good!",
 })
 rawset(_G, "TAKIS_COMBO_UP", 5)
 rawset(_G, "TAKIS_HAPPYHOURFONT", "TAHRF")
@@ -102,6 +105,22 @@ for k,v in ipairs(hurtmsgenum)
 	print("Enummed HURTMSG_"..v.." ("..(k-1)..")")
 end
 
+local noabflags = {
+	"CLUTCH",
+	"HAMMER",
+	"DIVE",
+	"SLIDE",
+	"WAVEDASH",
+	"SHOTGUN",		//generally for anything shotgunned
+}
+for k,v in ipairs(noabflags)
+	rawset(_G,"NOABIL_"..v,1<<(k-1))
+	print("Enummed NOABIL_"..v.." ("..1<<(k-1)..")")
+end
+//anything that uses spin
+rawset(_G,"NOABIL_SPIN",NOABIL_CLUTCH|NOABIL_HAMMER|NOABIL_SHOTGUN|NOABIL_WAVEDASH)
+
+
 //spike stuff according tro source
 // https://github.com/STJr/SRB2/blob/a4a3b5b0944720a536a94c9d471b64c822cdac61/src/p_map.c#L838
 rawset(_G, "SPIKE_LIST", {
@@ -114,10 +133,10 @@ rawset(_G, "SPIKE_LIST", {
 rawset(_G, "TAKIS_NET", {
 	inspecialstage = false,
 	inbossmap = false,
+	inbrakmap = false,
 	isretro = 0,
 	
 	livescount = 0,
-	usesheartcards = true,
 	
 	dontspeedboost = false,
 	
@@ -129,6 +148,8 @@ rawset(_G, "TAKIS_NET", {
 	
 	exitingcount = 0,
 	playercount = 0,
+	
+	ideyadrones = {},
 })
 
 freeslot("MT_TAKIS_TAUNT_HITBOX")
@@ -225,6 +246,9 @@ rawset(_G, "TakisInitTable", function(p)
 		afterimagecolor = 1,
 		dustspawnwait = 0,
 		timetouchingground = 0,
+		resettingtoslide = false,
+		//NIGHT SEX PLODE!?!?!?
+		nightsexplode = false,
 		
 		taunttime = 0,
 		tauntid = 0,
@@ -272,6 +296,7 @@ rawset(_G, "TakisInitTable", function(p)
 			//anim stuff
 			introtics = 0,
 			outrotics = 0,
+			outrotointro = 0,
 			gravity = 0,
 			frozen = false,
 		},
@@ -289,6 +314,7 @@ rawset(_G, "TakisInitTable", function(p)
 			windowstyle = 'win10', //for cosmenu, all lowercase
 			additiveai = 0,
 			ihavemusicwad = 0, //samus-like check for music stuff
+			clutchstyle = 0,
 		},
 		//tf2 taunt menu lol
 		//up to 7 taunts, detected with BT_WEAPONMASK
@@ -394,6 +420,7 @@ rawset(_G, "TakisInitTable", function(p)
 		isElevated = false,
 		inNIGHTSMode = false,
 		justHitFloor = false,
+		inSRBZ = false,
 		
 		//fake powers
 		fakeflashing = 0,
@@ -403,6 +430,7 @@ rawset(_G, "TakisInitTable", function(p)
 		fakesneakers = 0,
 		fakeexiting = 0,
 		nocontrol = 0,
+		noability = 0,
 		
 		//quakes
 		quakeint = 0, 
@@ -484,7 +512,6 @@ rawset(_G, "TakisInitTable", function(p)
 			happyhour = {
 				falldown = false,
 				doingit = false,
-				xadd = 0,
 				its = {
 					scale = FU/20,
 					expectedtime = TR,

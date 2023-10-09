@@ -1,3 +1,7 @@
+//LOOKING AT MY CODE,,, CURSED!!!
+//𓀀 𓀁 𓀂 𓀃 𓀄 𓀅 𓀆 𓀇 𓀈 𓀉 𓀊 𓀋 𓀌 𓀍 𓀎 𓀏 𓀐 𓀑 𓀒 𓀓 𓀔 𓀕 𓀖 𓀗 𓀘 𓀙 𓀚
+//j
+
 // "Terrible Character..."
 
 if (VERSION == 202) and (SUBVERSION < 12)
@@ -33,6 +37,7 @@ end
 local guh = {
 	"init",
 }
+//libs
 local filelistt1 = {
 	"CustomHud",
 	"achievements",
@@ -40,12 +45,14 @@ local filelistt1 = {
 	"taunts",
 	"menu",
 	"happyhour",
+	"NFreeroam",
 }
 local filelist = {
 	"io",
 	"main",
 	"hud",
 	"cmds",
+	"devcmds",
 	"misc",
 	"MOTD",
 }
@@ -100,20 +107,27 @@ end)
 
 //the file stuff
 local pre = "LUA_"
+local suf = ".lua"
 
 for k,v in ipairs(guh)
 	dofile2(pre..v)
 end
 
 for k,v in ipairs(filelistt1)
-	dofile2("libs/".. pre..v)
+	dofile2("libs/".. pre..v..suf)
 end
 
 for k,v in ipairs(filelist)
-	dofile2(pre..v)
+	dofile2(pre..v..suf)
 end
 
 print("Did init.lua\n")
 
 takis_printdebuginfo()
+
+if filesdone ~= NUMFILES
+	print("\x85"..(NUMFILES-filesdone).." file(s) were not executed.\n")
+	S_StartSound(nil,sfx_skid)
+end
+
 takis_printwarning()

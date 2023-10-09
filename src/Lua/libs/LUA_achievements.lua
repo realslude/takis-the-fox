@@ -11,6 +11,8 @@ local achs = {
 	"CLUTCHSPAM",
 	"COMBOCLOSE",
 	"COMBOALMOST",
+	"BOOMSTICK",
+	"BRAKMAN",
 }
 for k,v in ipairs(achs)
 	rawset(_G,"ACHIEVEMENT_"..string.upper(v),1<<(k-1))
@@ -74,7 +76,8 @@ rawset(_G,"TAKIS_ACHIEVEMENTINFO",{
 		name = "Hardcore Enjoyer",
 		icon = "ACH_HARDCORE",
 		scale = FU/4,
-		text = "Beat a level with no Cards."
+		text = "Beat a level with 1 Card\n"
+			 .."and after being hit 3 times."
 	},
 	[ACHIEVEMENT_CLUTCHSPAM] = {
 		name = "Amatuer Clutcher",
@@ -93,6 +96,18 @@ rawset(_G,"TAKIS_ACHIEVEMENTINFO",{
 		icon = "ACH_PLACEHOLDER",
 		scale = FU/4,
 		text = "Start a new combo just\n".."after losing a high one."
+	},
+	[ACHIEVEMENT_BOOMSTICK] = {
+		name = "Behold, my Boomstick!",
+		icon = "ACH_BOOMSTICK",
+		scale = FU/4,
+		text = "Acquire the shotgun."
+	},
+	[ACHIEVEMENT_BRAKMAN] = {
+		name = "I'm Brakman.",
+		icon = "ACH_PLACEHOLDER",
+		scale = FU/4,
+		text = "Deal the finishing blow\nto Brak Eggman.",
 	},
 })
 

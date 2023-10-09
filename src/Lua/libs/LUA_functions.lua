@@ -153,6 +153,7 @@ rawset(_G, "TakisBooleans", function(p,me,takis,SKIN)
 	end
 	takis.isElevated = IsPlayerAdmin(p) or (p == server)
 	takis.inNIGHTSMode = (p.powers[pw_carry] == CR_NIGHTSMODE) or (maptol & TOL_NIGHTS)
+	takis.inSRBZ = gametype == GT_SRBZ
 end)
 
 local function dorandom()
@@ -215,10 +216,6 @@ rawset(_G, "TakisAnimateHappyHour", function(p)
 		
 		local h = hud.happyhour
 		local y = 40*FU
-		hud.happyhour.xadd = P_RandomFixed()
-		if ((leveltime%4) < 3)
-			hud.happyhour.xadd = -$
-		end
 		local back = 4*FU/5
 		
 		hud.happyhour.its.scale = ease.inoutback(( FU / h.its.expectedtime )*tics, FU/100, 3*FU/5,back)
@@ -328,7 +325,7 @@ rawset(_G, "TakisHUDStuff", function(p)
 				hud.timeshake = $+1
 				if not takis.sethappyend
 				and (takis.io.happyhourstyle == 1)
-					S_ChangeMusic("HPYHRE",false,p,0,0,3*MUSICRATE)
+					ChangeTakisMusic("hpyhre",false,p,0,0,3*MUSICRATE)
 					takis.sethappyend = true
 				end
 				DoQuake(p,(time*FU)/50,1)
@@ -468,6 +465,10 @@ rawset(_G, "TakisDoShorts", function(p,me,takis)
 	
 	TakisHUDStuff(p)
 	
+	if (takis.noability)
+		takis.noability = 0
+	end
+	
 	//fake pw_flashing
 	if takis.fakeflashing > 0
 		p.powers[pw_flashing] = takis.fakeflashing
@@ -570,6 +571,10 @@ rawset(_G, "TakisDoShorts", function(p,me,takis)
 		end
 	end
 	
+	if takis.combo.outrotointro
+		takis.combo.outrotointro = $*4/5
+	end
+	
 	if (p.powers[pw_sneakers] > 0)
 		/*
 		if takis.shotgunned
@@ -657,6 +662,9 @@ rawset(_G, "TakisDoShorts", function(p,me,takis)
 			d.angle = p.drawangle
 			d.dispoffset = 2
 			p.powers[pw_strong] = $|STR_PUNCH|STR_STOMP|STR_UPPER
+		end
+		if not (leveltime%2)
+			TakisCreateAfterimage(p,me)
 		end
 	else
 		if (takis.drilleffect and takis.drilleffect.valid)
@@ -779,13 +787,6 @@ rawset(_G, "TakisDoShorts", function(p,me,takis)
 	if (p.elfride)
 	and (p.elfride.cheerdur/5 > 0)
 		TakisGiveCombo(p,takis,false,true)
-	end
-	
-	if p.powers[pw_carry] == CR_NIGHTSMODE
-	or ((TAKIS_NET.usesheartcards == false) and (leveltime > 3))
-	and (takis.heartcards ~= 0 or takis.heartcardpieces ~= 0)
-		takis.heartcards = 0
-		takis.heartcardpieces = 0
 	end
 	
 	if P_CheckDeathPitCollide(me)
@@ -1091,7 +1092,7 @@ rawset(_G, "TakisDoShorts", function(p,me,takis)
 	
 	if takis.afterimaging
 	or (p.powers[pw_invulnerability]
-	or p.powers[pw_super] or takis.hammerblastdown)
+	or p.powers[pw_super] or takis.hammerblasstdown)
 		p.powers[pw_strong] = $|STR_SPIKE
 	else
 		p.powers[pw_strong] = $ &~STR_SPIKE
@@ -1107,10 +1108,16 @@ rawset(_G, "TakisDoShorts", function(p,me,takis)
 		end
 	end
 	
+	//no continue state
 	if (me.sprite2 == SPR2_CNT1)
 	or (me.sprite2 == SPR2_CNT2)
 	or (me.sprite2 == SPR2_CNT3)
+	or (takis.heartcards == 0 and me.health and not p.exiting)
 		P_KillMobj(me)
+	end
+	
+	if takis.inSRBZ
+		takis.noability = NOABIL_SPIN|NOABIL_DIVE
 	end
 	
 	p.alreadyhascombometer = 2
@@ -1192,29 +1199,31 @@ rawset(_G, "CreateWindRing", function(p,me)
 end)
 
 rawset(_G, "DoTakisSquashAndStretch", function(p, me, takis)
-		//dont do this in nights
-		if (p.powers[pw_carry] == CR_NIGHTSMODE)
-		or (p.powers[pw_carry] == CR_PLAYER)
-		or (p.powers[pw_carry] == CR_ZOOMTUBE)
-		or (p.powers[pw_carry] == CR_PTERABYTE)
-		or (p.powers[pw_carry] == CR_MINECART)
-		or (p.powers[pw_carry] == CR_ROPEHANG)
-			return
-		end
-		if p.jt == nil then
-			//jt is the only thing responsible for the stretching!?!?
-			p.jt = 0
-			p.jp = 0
-			p.sp = 0
-			p.tk = 0
-			p.tr = 0
-		end
-		if p.jt > 0 then
-			p.jt = p.jt - 1
-		end
-		if p.jt < 0 then
-			p.jt = p.jt + 1
-		end
+	local dontdo = false
+	if (p.powers[pw_carry] == CR_NIGHTSMODE)
+	or (p.powers[pw_carry] == CR_PLAYER)
+	or (p.powers[pw_carry] == CR_ZOOMTUBE)
+	or (p.powers[pw_carry] == CR_PTERABYTE)
+	or (p.powers[pw_carry] == CR_MINECART)
+	or (p.powers[pw_carry] == CR_ROPEHANG)
+		dontdo = true
+	end
+	
+	if p.jt == nil then
+		//jt is the only thing responsible for the stretching!?!?
+		p.jt = 0
+		p.jp = 0
+		p.sp = 0
+		p.tk = 0
+		p.tr = 0
+	end
+	if p.jt > 0 then
+		p.jt = p.jt - 1
+	end
+	if p.jt < 0 then
+		p.jt = p.jt + 1
+	end
+	if not dontdo
 		if me.momz*takis.gravflip < 1 then
 			p.jp = 0
 		end
@@ -1237,21 +1246,22 @@ rawset(_G, "DoTakisSquashAndStretch", function(p, me, takis)
 			p.tk = 1
 			p.jt = 5
 		end
-		p.maths = p.jt*FU
-		p.maths = p.maths / 10
-		me.spriteyscale = p.maths + FU
-		
-		p.maths = p.jt*p.spinheight
-		if me.state != S_PLAY_ROLL then
-			p.maths = p.jt*p.height
-		end
-		p.maths = p.maths / 20
-		me.spriteyoffset = -1*p.maths
-		
-		p.maths = p.jt*FU
-		p.maths = p.maths / 10
-		p.maths = p.maths*-1
-		me.spritexscale = p.maths + FU
+	end
+	p.maths = p.jt*FU
+	p.maths = p.maths / 10
+	me.spriteyscale = p.maths + FU
+	
+	p.maths = p.jt*p.spinheight
+	if me.state != S_PLAY_ROLL then
+		p.maths = p.jt*p.height
+	end
+	p.maths = p.maths / 20
+	me.spriteyoffset = -1*p.maths
+	
+	p.maths = p.jt*FU
+	p.maths = p.maths / 10
+	p.maths = p.maths*-1
+	me.spritexscale = p.maths + FU
 end)
 
 //thank you Tatsuru for this thing on the srb2 discord!
@@ -1267,6 +1277,8 @@ local function CheckAndCrumble(me, sec)
 			TakisGiveCombo(me.player,me.player.takistable,true)
 		elseif (me.type == MT_TAKIS_HAMMERHITBOX)
 			TakisGiveCombo(me.parent.player,me.parent.player.takistable,true)		
+		elseif (me.type == MT_THROWNSCATTER)
+			TakisGiveCombo(me.tracer.player,me.tracer.player.takistable,true)		
 		end
 		EV_CrumbleChain(fof) -- Crumble
 	end
@@ -1510,10 +1522,6 @@ rawset(_G, "TakisHealPlayer", function(p,me,takis,healtype,healamt)
 		healamt = 1
 	end
 	
-	if TAKIS_NET.usesheartcards == false
-		return
-	end
-	
 	//hurt
 	if healtype == 3
 		if takis.heartcards ~= 0
@@ -1616,6 +1624,7 @@ rawset(_G, "SpawnRagThing",function(tm,t,source)
 	
 	if not (tm.flags & MF_BOSS)
 		if (tm.flags & MF_ENEMY)
+		or (tm.takis_flingme)
 			//spawn ragdoll thing here
 			local ragdoll = P_SpawnMobjFromMobj(tm,0,0,0,MT_TAKIS_BADNIK_RAGDOLL)
 			tm.tics = -1
@@ -1680,9 +1689,13 @@ rawset(_G, "SpawnRagThing",function(tm,t,source)
 		P_KillMobj(tm,t,source)
 		//S_StopSound(tm)
 		if ((tm) and (tm.valid))
-		and (tm.flags & MF_ENEMY)
+		and (tm.flags & MF_ENEMY
+		or tm.takis_flingme)
 			//hide deathstate
 			tm.flags2 = $|MF2_DONTDRAW
+			if tm.tics == -1
+				tm.tics = 1
+			end
 		end
 	else
 		
@@ -1725,6 +1738,7 @@ local getcomnum = {
 rawset(_G, "TakisGiveCombo",function(p,takis,add,max,remove)
 	if (p.powers[pw_carry] == CR_NIGHTSMODE)
 	or not (gametyperules & GTR_FRIENDLY)
+	or (maptol & TOL_NIGHTS)
 		return
 	end
 	if add == nil
@@ -1744,6 +1758,7 @@ rawset(_G, "TakisGiveCombo",function(p,takis,add,max,remove)
 			S_StartSound(nil,sfx_kc3c,p)
 			takis.HUD.combo.scale = $+(FU/5)
 			if takis.combo.outrotics
+				takis.combo.outrotointro = takis.combo.gravity
 				if takis.combo.failcount >= 50 //TAKIS_NET.partdestoy
 					TakisAwardAchievement(p,ACHIEVEMENT_COMBOALMOST)
 				end
@@ -1845,7 +1860,10 @@ rawset(_G, "TakisSpawnDeadBody", function(p, me, soap)
 end)
 
 rawset(_G, "TakisDeathThinker",function(p,me,takis)
-
+	print("ASD",
+		me.state,
+		me.sprite2
+	)
 	//explosion anim
 	if me.sprite2 == SPR2_TDED
 		if p.deadtimer < 21
@@ -2742,6 +2760,9 @@ end)
 */
 
 local musdefaults = {
+	["hpyhr2"] = "vsmetl",
+	["hapyhr"] = "mp_mrz",
+	["hpyhre"] = "spec7",
 	["letter"] = "_chsel",
 	["_conga"] = "_chsel",
 	["war"] = "vsbrak"
@@ -2763,7 +2784,7 @@ rawset(_G, "ReturnTakisMusic",function(mus,p)
 	
 end)
 
-rawset(_G, "ChangeTakisMusic",function(mus,looping,p)
+rawset(_G, "ChangeTakisMusic",function(mus,looping,p,f,g,fade)
 	local playert = consoleplayer
 	if p and p.valid
 	and userdataType(p) == "player_t"
@@ -2777,7 +2798,7 @@ rawset(_G, "ChangeTakisMusic",function(mus,looping,p)
 		return false
 	end
 	
-	S_ChangeMusic(mus,looping,p)
+	S_ChangeMusic(mus,looping,p,f,g,fade)
 	return true
 end)
 
@@ -2835,6 +2856,7 @@ rawset(_G, "TakisShotgunify", function(p)
 	takis.shotgunned = true
 	ChangeTakisMusic("war",true,p)
 	S_StartSound(nil,sfx_shgnl,p)
+	TakisAwardAchievement(p,ACHIEVEMENT_BOOMSTICK)
 	if not ((takis.shotgun) and (takis.shotgun.valid))
 		local x = cos(p.drawangle-ANGLE_90)
 		local y = sin(p.drawangle-ANGLE_90)

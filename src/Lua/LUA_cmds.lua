@@ -90,34 +90,6 @@ COM_AddCommand("takis_morehappyhour", function(p)
 	TakisSaveStuff(p)
 end)
 
-/*
-COM_AddCommand("takis_forcealiment", function(p,type)
-	if gamestate ~= GS_LEVEL
-		prn(p,"You can't use this right now.")
-		return
-	end
-	
-	if not (p.takistable)
-		prn(p,"You can't use this right now.")
-		return	
-	end
-	
-	if type == nil
-		return
-	end
-	
-	local ali = p.takistable.aliments
-	
-	if type == "sunstroke"
-		ali.sunstroked = true
-		DoFlash(p,PAL_NUKE,2)
-	elseif type == "freezing"
-		ali.timetoice = TAKIS_MAX_ICETIME
-	end
-	
-end)
-*/
-
 COM_AddCommand("takis_debuginfo", takis_printdebuginfo)
 
 COM_AddCommand("takis_saveconfig", function(p)
@@ -127,80 +99,6 @@ COM_AddCommand("takis_loadconfig", function(p)
 	p.takistable.io.loaded = false
 	TakisLoadStuff(p)
 end)
-
-/*
-local ranktonum = {
-	["P"] = 6,
-	["S"] = 5,
-	["A"] = 4,
-	["B"] = 3,
-	["C"] = 2,
-	["D"] = 1,
-}
-
-COM_AddCommand("takis_setrank", function(p,rank)
-	if gamestate ~= GS_LEVEL
-		prn(p,"You can't use this right now.")
-		return
-	end
-	
-	if not (p.takistable)
-		prn(p,"You can't use this right now.")
-		return	
-	end
-	
-	if rank == nil
-		return
-	end
-	
-	if (gametype ~= GT_PIZZATIMEJISK)
-		return
-	end
-	
-	if not (ranktonum[rank])
-		rank = "D"
-	end
-	
-	if ranktonum[rank] > 6
-		rank = "P"
-	end
-	
-	if ranktonum[rank] < 1
-		rank = "D"
-	end
-	
-	
-	local per = (PTJE.maxrankpoints)/6
-	
-	p.score = per*(ranktonum[rank]-1)
-end,COM_ADMIN)
-*/
-
-COM_AddCommand("takis_sethp", function(p,type,amt)
-	if gamestate ~= GS_LEVEL
-		return
-	end
-	if not p.mo.health
-		return
-	end
-	local takis = p.takistable
-	if not (takis.isTakis)
-		return
-	end
-	if type == nil
-		return
-	end
-	if amt == nil
-		return
-	end
-	
-	type = tonumber($)
-	if ((type > 3) or (type < 1))
-		return
-	end
-	
-	TakisHealPlayer(p,p.mo,takis,type,amt)
-end,COM_ADMIN)
 
 local function GetPlayerHelper(pname)
 	-- Find a player using their node or part of their name.
@@ -509,70 +407,6 @@ COM_AddCommand("takis_deleteachievements", function(p)
 	
 end)
 
-COM_AddCommand("setscore", function(p,score)
-	if gamestate ~= GS_LEVEL
-		prn(p,"You can't use this right now.")
-		return
-	end
-
-	if score == nil
-		return
-	end
-	
-	if string.lower(score) == "max"
-		p.score = UINT32_MAX
-		return
-	end
-	
-	score = abs(tonumber(score))
-	
-	p.score = score
-end,COM_ADMIN)
-
-local shields = {
-	["n"] = SH_NONE,
-	["p"] = SH_PITY,
-	["w"] = SH_WHIRLWIND,
-	["a"] = SH_ARMAGEDDON,
-	["pk"] = SH_PINK,
-	["e"] = SH_ELEMENTAL,
-	["m"] = SH_ATTRACT,
-	["fa"] = SH_FLAMEAURA,
-	["b"] = SH_BUBBLEWRAP,
-	["t"] = SH_THUNDERCOIN,
-	["f"] = SH_FORCE|1,
-	["ff"] = SH_FIREFLOWER,
-}
-
-COM_AddCommand("shield", function(p,sh)
-	if gamestate ~= GS_LEVEL
-		prn(p,"You can't use this right now.")
-		return
-	end
-
-	if sh == nil
-		return
-	end
-	
-	sh = string.lower($)
-	
-	if shields[sh]
-		p.powers[pw_shield] = shields[sh]
-		P_SpawnShieldOrb(p)
-	end
-	
-end,COM_ADMIN)
-
-COM_AddCommand("leave", function(p)
-	if gamestate ~= GS_LEVEL
-		prn(p,"You can't use this right now.")
-		return
-	end
-	
-	P_DoPlayerExit(p)
-	p.exiting = 4
-end,COM_ADMIN)
-
 COM_AddCommand("takis_ihavethemusicwad", function(p)
 	if gamestate ~= GS_LEVEL
 		prn(p,"You can't use this right now.")
@@ -593,23 +427,7 @@ COM_AddCommand("takis_ihavethemusicwad", function(p)
 	else
 		prn(p,"\x82You have TakisMusic.pk3 downloaded or loaded, Takis will add it on load.")
 	end
+	TakisSaveStuff(p)
 end)
-
-COM_AddCommand("takis_setdebug", function(p,arg)
-	local takis = p.takistable
-	
-	if not TAKIS_ISDEBUG
-		return
-	end
-	if arg == nil
-		CONS_Printf(p,"Current flag is "..TAKIS_DEBUGFLAG)
-		return
-	end
-	
-	arg = tonumber(arg)
-	TAKIS_DEBUGFLAG = arg or 0
-
-end,COM_ADMIN)
-
 
 filesdone = $+1

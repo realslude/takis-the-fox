@@ -40,16 +40,17 @@ addHook("MapChange", function(mapid)
 			TAKIS_MAX_HEARTCARDS = tonumber(mapheaderinfo[mapid].takis_maxheartcards)
 		end
 	end
+	if ultimatemode
+		TAKIS_MAX_HEARTCARDS = 1
+	end
 	
-end)
-
-addHook("MapChange", do
+	TAKIS_NET.ideyadrones = {}
 	HH_Reset()
 end)
 
 addHook("MapLoad", function(mapid)
 	local t = TAKIS_NET
-	
+		
 	t.inbossmap = false
 	
 	t.numdestroyables = 0
@@ -58,34 +59,22 @@ addHook("MapLoad", function(mapid)
 	t.isretro = (maptol & TOL_MARIO)
 	
 	t.livescount = 0
-	t.usesheartcards = true
-  	
-	if (G_RingSlingerGametype())
-	or (gametyperules & (GTR_DEATHPENALTY|GTR_HURTMESSAGES|GTR_POINTLIMIT|GTR_PITYSHIELD|GTR_RINGSLINGER|GTR_TIMELIMIT|GTR_SPECTATORS))
-	or (ultimatemode)
-		t.usesheartcards = false
-	end
-	
-	
-	if (mapheaderinfo[mapid].takis_usesheartcards)
-		if (string.lower(mapheaderinfo[mapid].takis_usesheartcards) == "false")
-			t.usesheartcards = false
-		elseif (string.lower(mapheaderinfo[mapid].takis_usesheartcards) == "true")
-			t.usesheartcards = true
-		end
-	end
 	
 	for mt in mapthings.iterate
 		if mt.mobj and mt.mobj.valid
 			local mobj = mt.mobj
+			
+			if mobj.type == MT_CYBRAKDEMON
+				t.inbrakmap = true
+			end
 			
 			if mobj.type == MT_EGGMAN_BOX
 				continue
 			end
 			
 			if (mobj.flags & (MF_ENEMY|MF_MONITOR))
-			or ((mobj.type == MT_BOMBSPHERE) or (mobj.type == MT_SPIKEBALL)
-			or (mobj.type == MT_WALLSPIKE) or (mobj.type == MT_SPIKE))
+			or (SPIKE_LIST[mobj.type] == true)
+			or (mobj.takis_flingme)
 				mobj.partofdestoys = true
 				t.numdestroyables = $+1
 			end
@@ -353,6 +342,7 @@ addHook("MobjThinker", function(rag)
 			and (L_ZCollide(rag,found))
 				if (found.flags & (MF_ENEMY|MF_BOSS))
 				or (found.flags & MF_MONITOR)
+				or (found.takis_flingme)
 				and (found.type ~= MT_EGGMAN_BOX)
 					SpawnRagThing(found,rag,rag.parent2)
 				elseif (SPIKE_LIST[found.type] == true)
@@ -368,13 +358,14 @@ addHook("MobjThinker", function(rag)
 		for i = 0, 34
 			A_BossScream(rag,1,MT_SONIC3KBOSSEXPLODE)
 		end
-
+		
+		//collaterals
 		local px = rag.x
 		local py = rag.y
 		local br = 420*rag.scale
 		local h = 20
 		
-		if TAKIS_ISDEBUG
+		if (TAKIS_DEBUGFLAG & DEBUG_BLOCKMAP)
 			local me = rag
 			for i = 0,10
 				local f1 = P_SpawnMobj(px-br,py-br,me.z+((h*FU)*i),MT_THOK)
@@ -411,6 +402,7 @@ addHook("MobjThinker", function(rag)
 			and (found.health)
 				if (found.flags & (MF_ENEMY|MF_BOSS))
 				or (found.flags & MF_MONITOR)
+				or (found.takis_flingme)
 				and (found.type ~= MT_EGGMAN_BOX)
 					SpawnRagThing(found,helper,helper.parent2)
 				elseif (SPIKE_LIST[found.type] == true)
@@ -456,10 +448,6 @@ end, MT_STARPOST)
 
 local function docards(post,touch)
 	if touch.skin ~= TAKIS_SKIN
-		return
-	end
-	
-	if not TAKIS_NET.usesheartcards
 		return
 	end
 	
@@ -989,6 +977,8 @@ addHook("MobjThinker",function(shot)
 		return
 	end
 	
+	TakisBreakAndBust(nil,shot)
+	
 	if not shot.critcharged
 		return
 	end
@@ -1322,14 +1312,11 @@ end,MT_STARPOST)
 
 //disable yd if we're in a bossstage
 addHook("BossThinker", function(mo)
-	//EXCEPT for eggrock 2...,
-	if gamemap ~= 23
-		
-		if not TAKIS_NET.inbossmap
-			TAKIS_NET.inbossmap = true
-		end
-		
+	if (not TAKIS_NET.inbossmap)
+	and (mapheaderinfo[gamemap].muspostbossname ~= '')
+		TAKIS_NET.inbossmap = true
 	end
+	
 end)
 
 addHook("MobjThinker",function(effect)
@@ -1350,6 +1337,7 @@ addHook("MobjThinker",function(effect)
 	P_MoveOrigin(effect,me.x+17*x,me.y+17*y,me.z)
 	effect.angle = p.drawangle
 	effect.rollangle = R_PointToAngle2(0, 0, R_PointToDist2(0, 0, me.momx, me.momy), me.momz)
+	effect.scale = me.scale
 	
 	if (effect.tics % 2)
 		effect.flags2 = $|MF2_DONTDRAW
@@ -1394,6 +1382,7 @@ end)
 addHook("MobjSpawn",function(drone)
 	if (maptol & TOL_NIGHTS)
 		drone.dispoffset = -1
+		table.insert(TAKIS_NET.ideyadrones,drone)
 	end
 end,MT_EGGCAPSULE)
 
@@ -1422,7 +1411,13 @@ addHook("MobjThinker",function(drone)
 			end
 			i = $+1
 		end
+		//only on the final mare
+		if coolp.mare ~= #TAKIS_NET.ideyadrones-1
+			return
+		end
 		HH_Trigger(coolp.nightstime)
+		coolp.mo.angle = coolp.drawangle
+		NiGHTSFreeroam(coolp)
 	end
 	
 	drone.hadnograv = drone.flags & MF_NOGRAVITY
@@ -1457,7 +1452,7 @@ addHook("MobjMoveCollide",function(effect,t)
 	
 	if (t.flags & MF_ENEMY)
 	or (nightsthings[t.type] == true)
-		P_KillMobj(t,effect,effect.tracer)
+		P_KillMobj(t,effect.tracer ,effect.tracer)
 	end
 	
 end,MT_TAKIS_DRILLEFFECT)
@@ -1476,10 +1471,14 @@ addHook("PostThinkFrame", function ()
 		
         if takis.inwaterslide
 		and not (takis.inPain or takis.inFakePain) then
-            p.mo.sprite2 = SPR2_SLID
+            takis.resettingtoslide = true
+			p.mo.sprite2 = SPR2_SLID
             p.mo.frame = ($ & ~FF_FRAMEMASK) | (leveltime % 4) / 2
             p.drawangle = p.mo.angle
+			continue
         end
+		
+		takis.resettingtoslide = false
     end
 end)
 
@@ -1496,5 +1495,30 @@ addHook("MobjThinker",function(ring)
 		ring.frame = A|numtotrans[10-ring.fuse]
 	end
 end,MT_WINDRINGLOL)
+
+addHook("MobjDeath",function(brak,_,sor)
+	if not (sor and sor.valid)
+		return
+	end
+	
+	if not (sor.player and sor.player.valid)
+		return
+	end
+	
+	if not (TAKIS_NET.inbrakmap)
+		return
+	end
+	
+	TakisAwardAchievement(sor.player,ACHIEVEMENT_BRAKMAN)
+end,MT_CYBRAKDEMON)
+
+addHook("MobjSpawn",function(egg)
+	if not egg
+	or not egg.valid
+		return
+	end
+	
+	egg.takis_flingme = true
+end,MT_EGGROBO1)
 
 filesdone = $+1

@@ -6,14 +6,21 @@ local modname = "takisthefox"
 local function drawheartcards(v,p)
 
 	if (customhud.CheckType("takis_heartcards") != modname) return end
-
+	
+	local amiinsrbz = false
+	
+	if (gametype == GT_SRBZ)
+		if not p.chosecharacter
+			amiinsrbz = true
+		end
+	end
+	
 	if p.takistable.inNIGHTSMode
 	or (TAKIS_NET.inspecialstage)
+	or amiinsrbz
 		return
 	end
 	
-	if (TAKIS_NET.usesheartcards == true or ultimatemode)
-
 	local xoff = 20*FU
 	local takis = p.takistable
 	
@@ -27,9 +34,10 @@ local function drawheartcards(v,p)
 	
 	//heart cards
 	for i = 1, TAKIS_MAX_HEARTCARDS do
-		if i ~= TAKIS_MAX_HEARTCARDS
-		and ultimatemode
-			continue
+		
+		local j = i
+		if (TAKIS_MAX_HEARTCARDS == 1)
+			j = 0
 		end
 		
 		local eflag = V_HUDTRANS
@@ -39,15 +47,14 @@ local function drawheartcards(v,p)
 		or p.spectator
 		or ultimatemode
 			patch = v.cachePatch("HEARTCARD2")
-			if ultimatemode
+		/*	if ultimatemode
 			and p.playerstate == PST_LIVE
 				patch = v.cachePatch("HEARTCARD3")
 			end
-			if p.spectator
+		*/	if p.spectator
 				eflag = V_HUDTRANSHALF
 			end
-		end
-				
+		end				
 		local add = -3*FU
 				
 		if (i%2)
@@ -81,9 +88,8 @@ local function drawheartcards(v,p)
 		end
 
 		local flags = V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER|eflag
-		
 		//draw from last to first
-		v.drawScaled(maxx-((13*FU)*i)+xoff+shakex,15*FU+add-takis.HUD.heartcards.add+shakey,4*FU/5, patch, flags)
+		v.drawScaled(maxx-((13*FU)*j)+xoff+shakex,15*FU+add-takis.HUD.heartcards.add+shakey,4*FU/5, patch, flags)
 		//v.drawScaled(15*FU,15*FU,4*FU/5, v.cachePatch("HEARTCARD1"), V_SNAPTOLEFT|V_SNAPTOTOP|V_HUDTRANS)
 		
 	end
@@ -97,33 +103,6 @@ local function drawheartcards(v,p)
 		v.drawScaled(maxx+(10*FU)+(25*FU)+xoff, 33*FU, FU/2,v.getSpritePatch("RING", A, 0, 0), V_SNAPTOLEFT|V_SNAPTOTOP|V_HUDTRANS|V_PERPLAYER)
 	end
 	
-	else
-		
-		local me = p.mo
-		local color = V_YELLOWMAP
-		local eflags = V_HUDTRANS
-		
-		if p.spectator
-			color = V_GRAYMAP
-			eflags = V_HUDTRANSHALF
-		else
-			if ((me) and (me.valid))
-				if (p.ctfteam == 1)
-					color = V_REDMAP
-				elseif (p.ctfteam == 2)
-					color = V_BLUEMAP
-				end
-				if (p.pflags & PF_TAGIT)
-					color = V_ORANGEMAP
-				end
-			else
-				color = V_GRAYMAP
-				eflags = V_HUDTRANSHALF
-			end
-		end
-		
-		v.drawString(35,20,p.name,V_ALLOWLOWERCASE|V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER|eflags|color)
-	end
 end
 
 --      ----------
@@ -164,12 +143,13 @@ local function calcstatusface(p,takis)
 	if takis.HUD.statusface.priority < 9
 		
 		//pain
-		if ((takis.inPain)
+		if ((takis.inPain or takis.inFakePain)
 		or (takis.ticsforpain)
 		or (me.sprite2 == SPR2_PAIN)
 		or (me.state == S_PLAY_PAIN)
 		or (takis.HUD.statusface.painfacetic))
-		and (not takis.inwaterslide)
+		and (not takis.resettingtoslide)
+		and (me.sprite2 ~= SPR2_SLID)
 			takis.HUD.statusface.state = "PAIN"
 			takis.HUD.statusface.frame = (leveltime%4)/2
 			takis.HUD.statusface.priority = 8
@@ -238,8 +218,17 @@ local function drawface(v,p)
 
 	if (customhud.CheckType("takis_statusface") != modname) return end
 
+	local amiinsrbz = false
+	
+	if (gametype == GT_SRBZ)
+		if not p.chosecharacter
+			amiinsrbz = true
+		end
+	end
+	
 	if p.takistable.inNIGHTSMode
 	or (TAKIS_NET.inspecialstage)
+	or amiinsrbz
 		return
 	end
 
@@ -303,6 +292,7 @@ local function drawrings(v,p)
 
 	if p.takistable.inNIGHTSMode
 	or (TAKIS_NET.inspecialstage)
+	or p.takistable.inSRBZ
 		return
 	end
 
@@ -384,6 +374,7 @@ local function drawtimer(v,p)
 
 	if p.takistable.inNIGHTSMode
 	or (TAKIS_NET.inspecialstage)
+	or p.takistable.inSRBZ
 		return
 	end
 	
@@ -426,7 +417,7 @@ local function drawtimer(v,p)
 	
 	if p.spectator
 		timex, timey = unpack(takis.HUD.timer.spectator)
-	elseif (((p.pflags & PF_FINISHED) and (netgame))
+	elseif ( ((p.pflags & PF_FINISHED) and (netgame))
 	or extrafunc == "hiding"
 	or extrafunc == "countinghide")
 	and not p.exiting
@@ -448,6 +439,7 @@ local function drawscore(v,p)
 	
 	if p.takistable.inNIGHTSMode
 	or (TAKIS_NET.inspecialstage)
+	or p.takistable.inSRBZ
 		return
 	end
 	
@@ -529,6 +521,7 @@ local function drawlivesarea(v,p)
 	
 	if p.takistable.inNIGHTSMode
 	or (TAKIS_NET.inspecialstage)
+	or p.takistable.inSRBZ
 		return
 	end
 	
@@ -751,17 +744,18 @@ local function drawlivesarea(v,p)
 		disp = $-20
 	end
 	
+	if (takis.shotgunned)
+		v.drawScaled(hudinfo[HUD_LIVES].x*FU, (hudinfo[HUD_LIVES].y+disp)*FU, (FU/2)+(FU/12), v.cachePatch("TB_C3"), V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_PERPLAYER|V_HUDTRANS,v.getColormap(nil, nil))
+		v.drawString(hudinfo[HUD_LIVES].x+20, hudinfo[HUD_LIVES].y+(disp+5), "Un-Shotgun",V_ALLOWLOWERCASE|V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_PERPLAYER|V_HUDTRANS, "small")	
+		disp = $-20
+	end
+	
 	if (p.powers[pw_shield] ~= CR_NONE)
 		local shieldflag = V_HUDTRANSHALF
 		shieldflag = TakisHUDShieldUsability(p) and V_HUDTRANS or V_HUDTRANSHALF
 		
 		v.drawScaled(hudinfo[HUD_LIVES].x*FU, (hudinfo[HUD_LIVES].y+disp)*FU, (FU/2)+(FU/12), v.cachePatch("TB_C2"), V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_PERPLAYER|shieldflag,v.getColormap(nil, nil))
 		v.drawString(hudinfo[HUD_LIVES].x+20, hudinfo[HUD_LIVES].y+(disp+5), "Shield Ability",V_ALLOWLOWERCASE|V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_PERPLAYER|V_HUDTRANS, "small")
-	end
-	
-	if (takis.shotgunned)
-		v.drawScaled(hudinfo[HUD_LIVES].x*FU, (hudinfo[HUD_LIVES].y+disp)*FU, (FU/2)+(FU/12), v.cachePatch("TB_C3"), V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_PERPLAYER|V_HUDTRANS,v.getColormap(nil, nil))
-		v.drawString(hudinfo[HUD_LIVES].x+20, hudinfo[HUD_LIVES].y+(disp+5), "Un-Shotgun",V_ALLOWLOWERCASE|V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_PERPLAYER|V_HUDTRANS, "small")	
 	end
 	
 	//xmom stuff
@@ -887,7 +881,7 @@ local function drawcombostuff(v,p)
 		local comboscale = takis.HUD.combo.scale+FU
 		local shake = -FixedMul(takis.HUD.combo.shake,comboscale)
 		local backx = 15*FU
-		local backy = 70*FU+shake-takis.combo.gravity
+		local backy = 70*FU+shake-(takis.combo.gravity or takis.combo.outrotointro)
 		
 		if ((p.pflags & PF_FINISHED) and (netgame))
 		and not p.exiting
@@ -961,6 +955,15 @@ local function drawcombostuff(v,p)
 			prevw = $+v.cachePatch(scorenum+n).width*4/10
 		end
 		
+		if takis.combo.cashable
+			v.drawString(backx+5*comboscale+(FixedMul(patchx,comboscale)),
+				backy-2*comboscale,
+				"C2+C3: Cash in!",
+				V_ALLOWLOWERCASE|V_GREENMAP|V_HUDTRANS|V_SNAPTOLEFT|V_SNAPTOTOP,
+				"thin-fixed-center"
+			)
+		end
+		
 		//draw the verys
 		local maxvery = 19	
 		
@@ -996,10 +999,6 @@ local function drawcombostuff(v,p)
 				"thin-fixed"
 			)
 			*/
-		end
-		
-		if takis.combo.cashable
-			v.drawString((hudinfo[HUD_RINGS].x+18+combdisp+6+10)*FU,(hudinfo[HUD_RINGS].y+20+35+10+comby)*FU+(add),"Press C1 and C2 to cash in!",V_HUDTRANS|V_ALLOWLOWERCASE|V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER,"small-fixed-center")
 		end
 		
 	else
@@ -1064,19 +1063,38 @@ local function drawjumpscarelol(v,p)
 	
 end
 
+local function happyshakelol(v)
+	local s = 5
+	local shakex,shakey = v.RandomFixed()/2,v.RandomFixed()/2
+	
+	local d1 = v.RandomRange(-1,1)
+	local d2 = v.RandomRange(-1,1)
+	if d1 == 0
+		d1 = v.RandomRange(-1,1)
+	end
+	if d2 == 0
+		d2 = v.RandomRange(-1,1)
+	end
+
+	shakex = $*s*d1
+	shakey = $*s*d2
+	
+	return shakex,shakey
+end
+
 local function drawhappyhour(v,p)
 
 	if (customhud.CheckType("ptje_itspizzatime") != modname) return end
 	
-	if (skins[p.skin].name ~= TAKIS_SKIN)
-	and (p.takistable.io.morehappyhour == 0)
+	if ((skins[p.skin].name ~= TAKIS_SKIN)
+	and (p.takistable.io.morehappyhour == 0))
+	and (HAPPY_HOUR.othergt)
 		return
 	end
 	
 	local takis = p.takistable
 	
 	if (HAPPY_HOUR.time) and (HAPPY_HOUR.time <= 5*TR)
-	
 	and (takis.io.nohappyhour == 0)
 		
 		local tics = HAPPY_HOUR.time
@@ -1098,21 +1116,25 @@ local function drawhappyhour(v,p)
 		
 		local me = p.realmo
 
-		local x = h.xadd
 		local back = 4*FU/5
 		
 		local pa = v.cachePatch
 		
 		if tics > 1
-			v.drawScaled(h.its.x+x, y+h.its.yadd, h.its.scale,
+			local shakex,shakey = happyshakelol(v)
+			v.drawScaled(h.its.x+shakex, y+h.its.yadd+shakey, h.its.scale,
 				pa(h.its.patch..h.its.frame),
 				V_SNAPTOTOP|V_HUDTRANS
 			)
-			v.drawScaled(h.happy.x+x, y+h.happy.yadd, h.happy.scale,
+			
+			shakex,shakey = happyshakelol(v)
+			v.drawScaled(h.happy.x+shakex, y+h.happy.yadd+shakey, h.happy.scale,
 				pa(h.happy.patch..h.happy.frame),
 				V_SNAPTOTOP|V_HUDTRANS
 			)
-			v.drawScaled(h.hour.x+x, y+h.hour.yadd, h.hour.scale,
+			
+			shakex,shakey = happyshakelol(v)
+			v.drawScaled(h.hour.x+shakex, y+h.hour.yadd+shakey, h.hour.scale,
 				pa(h.hour.patch..h.hour.frame),
 				V_SNAPTOTOP|V_HUDTRANS
 			)
@@ -1193,14 +1215,8 @@ local function getlaptext(p)
 
 end
 
-local function drawpizzatimer(v,p)
 
-	if (customhud.CheckType("ptje_bar") != modname) return end
-	
-	if (skins[p.skin].name ~= TAKIS_SKIN)
-		return
-	end
-	
+local function hhtimerbase(v,p)
 	if not HAPPY_HOUR.happyhour
 		return
 	end
@@ -1231,8 +1247,10 @@ local function drawpizzatimer(v,p)
 	if (cen < 10) then cpad = '0' end
 	
 	local timertime = min..":"..spad..sec
-	extrastring = "."..cpad..tics
-	extrastring = ''
+	extrastring = "."..cpad..cen 
+	if not (TAKIS_DEBUGFLAG & DEBUG_HAPPYHOUR)
+		extrastring = ''
+	end
 	
 	local string = timertime..extrastring
 	
@@ -1251,6 +1269,25 @@ local function drawpizzatimer(v,p)
 		)
 	
 	end
+
+end
+
+local function drawpizzatimer(v,p)
+
+	if (customhud.CheckType("ptje_bar") != modname) return end
+	
+	if (skins[p.skin].name ~= TAKIS_SKIN)
+	and (p.takistable.io.morehappyhour == 0)
+		return
+	end
+	
+	hhtimerbase(v,p)
+end
+
+local function drawhappytime(v,p)
+	if (customhud.CheckType("takis_happyhourtime") != modname) return end
+	
+	hhtimerbase(v,p)
 end
 
 local function drawtelebar(v,p)
@@ -1305,6 +1342,7 @@ local function drawpizzatips(v,p)
 	if (customhud.CheckType("ptje_tooltips") != modname) return end
 	
 	if (skins[p.skin].name ~= TAKIS_SKIN)
+	and (p.takistable.io.morehappyhour == 0)
 		return
 	end
 	
@@ -1636,23 +1674,27 @@ local function drawwareffect(v,p)
 	fade = $+1
 	
 //	v.fadeScreen(35,fade)
+	//drawfill my favorite :kindlygimmesummadat:
 	v.drawScaled(0,0,FU*10,v.cachePatch("TAUNTBACK"),(9-fade)<<V_ALPHASHIFT,v.getColormap(nil,SKINCOLOR_RED))
 end
 
+//TODO: rewrite this all lel
 local function drawcosmenu(v,p)
 	if (customhud.CheckType("takis_cosmenu") != modname) return end
 	
 	local takis = p.takistable
 	local me = p.mo
 	
-	local style = string.upper(takis.io.windowstyle).."_"
+	local style = string.upper(takis.io.windowstyle).. "_"
 	local menu = takis.cosmenu
 	local windowtext = TAKIS_MENU.entries[menu.page].title.." ("..tostring(menu.page+1).."/"..tostring(#TAKIS_MENU.entries+1)..")"
 	local maxbar = (string.len(windowtext)/4)+3
 	local maxbary = #TAKIS_MENU.entries[menu.page].text
-	local L = (maxbar*32)*FU
-	local A = 320*FU-L
-	local Y = 100*FU-(maxbary*25*FU/2)/2
+	local L = (maxbar*32)*FU					//length of window
+	local A = 320*FU-L							//???
+	local Y = 100*FU-(maxbary*25*FU/2)/2		//y to draw from
+	local scale = FU/2
+	
 	//draw outline
 	for i = 0,maxbar
 		local color = v.getColormap(nil,p.skincolor)
@@ -1672,7 +1714,7 @@ local function drawcosmenu(v,p)
 					patch = v.cachePatch(style.."9")
 				end
 			end
-			v.drawScaled((A/3)+(32*FU*i),(Y-2*FU)+(25*FU/2*j),FU/2,patch,V_HUDTRANS,color)
+			v.drawScaled((A/3)+(32*FU*i),(Y-2*FU)+(25*FU/2*j),scale,patch,V_HUDTRANS,color)
 		end
 	end
 	//draw windoww
@@ -1697,13 +1739,13 @@ local function drawcosmenu(v,p)
 					v.drawString( (A/3)+(32*FU*i)+16*FU,(Y-2*FU)-(25*FU/2)+(2*FU),"C1",V_HUDTRANS,"thin-fixed")
 				end
 			end
-			v.drawScaled((A/3)+(32*FU*i),(Y-2*FU)+(25*FU/2*j),FU/2,patch,V_HUDTRANS,color)
+			v.drawScaled((A/3)+(32*FU*i),(Y-2*FU)+(25*FU/2*j),scale,patch,V_HUDTRANS,color)
 		end
 	end
+	//cursor
 	if menu.page ~= 1
 		if not (TAKIS_MENU.entries[menu.page].nocursor)
 			local color = TAKIS_MENU.entries[menu.page].curcolor or ColorOpposite(TAKIS_MENU.entries[menu.page].color)
-			//cursor
 			for i = 0,maxbar
 				local color = v.getColormap(nil,color)
 				local patch = v.cachePatch("CURSOR_M")
@@ -1713,7 +1755,7 @@ local function drawcosmenu(v,p)
 				if i == maxbar
 					patch = v.cachePatch("CURSOR_R")
 				end
-				v.drawScaled((A/3)+(32*FU*i),(Y-2*FU)+(25*FU/2*(menu.y+1)),FU/2,patch,V_HUDTRANS,color)
+				v.drawScaled((A/3)+(32*FU*i),(Y-2*FU)+(25*FU/2*(menu.y+1)),scale,patch,V_HUDTRANS,color)
 			end
 		end
 	end
@@ -1721,50 +1763,50 @@ local function drawcosmenu(v,p)
 	//text
 	if menu.page ~= 1
 		for i = 1,maxbary
-				local txt = TAKIS_MENU.entries[menu.page].text[i]
-				if txt == "$$$$$"
-					if io --load savefile
-						DEBUG_print(p,"Using I/O in Menu, Config")
+			local txt = TAKIS_MENU.entries[menu.page].text[i]
+			if txt == "$$$$$"
+				if io --load savefile
+					DEBUG_print(p,"Using I/O in Menu, Config")
+					
+					local file = io.openlocal("client/takisthefox/config.dat")
+					
+					
+					//load file
+					if file 
+					
+						local code = file:read("*a")
 						
-						local file = io.openlocal("client/takisthefox/config.dat")
-						
-						
-						//load file
-						if file 
-						
-							local code = file:read("*a")
-							
-							if code ~= nil and not (string.find(code, ";"))
-								txt = "\x86".."Config: "..code
-							end
-						
-							file:close()
-						
-						else
-							txt = "\x86No Config."
+						if code ~= nil and not (string.find(code, ";"))
+							txt = "\x86".."Config: "..code
 						end
-						
+					
+						file:close()
+					
+					else
+						txt = "\x86No Config."
 					end
+					
 				end
-				v.drawString((A/3)+2*FU,Y+(25*FU/2*i),txt,V_HUDTRANS|V_ALLOWLOWERCASE,"thin-fixed")
-				
-				if (TAKIS_MENU.entries[menu.page].values ~= nil)
-				and (#TAKIS_MENU.entries[menu.page].values)
-					local table = TAKIS_NET
-					if TAKIS_MENU.entries[menu.page].table == "takis.io"
-						table = takis.io
-					elseif TAKIS_MENU.entries[menu.page].table == "takis"
-						table = takis
-					elseif TAKIS_MENU.entries[menu.page].table == "player"
-						table = p
-					elseif TAKIS_MENU.entries[menu.page].table ~= nil
-						table = p[TAKIS_MENU.entries[menu.page].table]
-					end
-					v.drawString((A/3)+((32*FU)*(maxbar+1))-2*FU,Y+(25*FU/2*i),
-						tostring(table[(TAKIS_MENU.entries[menu.page].values[i])]),
-						V_HUDTRANS|V_ALLOWLOWERCASE,"thin-fixed-right"
-					)
+			end
+			v.drawString((A/3)+2*FU,Y+(25*FU/2*i),txt,V_HUDTRANS|V_ALLOWLOWERCASE,"thin-fixed")
+			
+			if (TAKIS_MENU.entries[menu.page].values ~= nil)
+			and (#TAKIS_MENU.entries[menu.page].values)
+				local table = TAKIS_NET
+				if TAKIS_MENU.entries[menu.page].table == "takis.io"
+					table = takis.io
+				elseif TAKIS_MENU.entries[menu.page].table == "takis"
+					table = takis
+				elseif TAKIS_MENU.entries[menu.page].table == "player"
+					table = p
+				elseif TAKIS_MENU.entries[menu.page].table ~= nil
+					table = p[TAKIS_MENU.entries[menu.page].table]
 				end
+				v.drawString((A/3)+((32*FU)*(maxbar+1))-2*FU,Y+(25*FU/2*i),
+					tostring(table[(TAKIS_MENU.entries[menu.page].values[i])]),
+					V_HUDTRANS|V_ALLOWLOWERCASE,"thin-fixed-right"
+				)
+			end
 		end
 	//achievements, hardcoded
 	else
@@ -1806,19 +1848,19 @@ local function drawcosmenu(v,p)
 			
 			v.drawScaled((A/3)+2*FU,
 				Y+((17)*FU)*i+13*FU-minus,
-				TAKIS_ACHIEVEMENTINFO[1<<i].scale,
+				TAKIS_ACHIEVEMENTINFO[1<<i].scale or FU,
 				v.cachePatch(TAKIS_ACHIEVEMENTINFO[1<<i].icon),
 				has
 			)
 			v.drawString((A/3)+2*FU+(16*FU),
 				Y+((17)*FU)*i+13*FU-minus,
-				TAKIS_ACHIEVEMENTINFO[1<<i].name,
+				TAKIS_ACHIEVEMENTINFO[1<<i].name or "Ach. Enum "..(1<<i),
 				V_ALLOWLOWERCASE|V_RETURN8,
 				"thin-fixed"
 			)
 			v.drawString((A/3)+2*FU+(16*FU),
 				Y+((17)*FU)*i+13*FU+(8*FU)-minus,
-				TAKIS_ACHIEVEMENTINFO[1<<i].text,
+				TAKIS_ACHIEVEMENTINFO[1<<i].text or "Flavor text goes here",
 				V_ALLOWLOWERCASE|V_RETURN8,
 				"small-fixed"
 			)
@@ -2066,6 +2108,14 @@ local function drawdebug(v,p)
 		DrawButton(v, p, x+66, y, flags, color, color2, takis.fire,'F', 'left')
 		DrawButton(v, p, x+77, y, flags, color, color2, takis.firenormal,'FN', 'thin')
 		
+		v.drawString(x,y-58,"noability",flags|V_GREENMAP,"thin")
+		drawflag(v,x+00,y-50,"CL",flags,V_GREENMAP,V_REDMAP,"thin",(takis.noability & NOABIL_CLUTCH))
+		drawflag(v,x+15,y-50,"HM",flags,V_GREENMAP,V_REDMAP,"thin",(takis.noability & NOABIL_HAMMER))
+		drawflag(v,x+30,y-50,"DI",flags,V_GREENMAP,V_REDMAP,"thin",(takis.noability & NOABIL_DIVE))
+		drawflag(v,x+45,y-50,"SL",flags,V_GREENMAP,V_REDMAP,"thin",(takis.noability & NOABIL_SLIDE))
+		drawflag(v,x+60,y-50,"WD",flags,V_GREENMAP,V_REDMAP,"thin",(takis.noability & NOABIL_WAVEDASH))
+		drawflag(v,x+75,y-50,"SG",flags,V_GREENMAP,V_REDMAP,"thin",(takis.noability & NOABIL_SHOTGUN))
+		
 		v.drawString(x,y-38,"FSTASIS",flags|V_GREENMAP,"thin")
 		v.drawString(x,y-30,takis.stasistic,flags,"thin")
 		
@@ -2079,6 +2129,7 @@ local function drawdebug(v,p)
 		
 		v.drawString(x+60,y-18,"nocontrol",flags,"thin")
 		v.drawString(x+60,y-10,p.powers[pw_nocontrol],flags,"thin")
+		
 	end
 	if (TAKIS_DEBUGFLAG & DEBUG_PAIN)
 		drawflag(v,160,122,"Pain",V_HUDTRANS|V_PERPLAYER|V_ALLOWLOWERCASE,V_GREENMAP,V_REDMAP,"thin",(takis.inPain))
@@ -2128,6 +2179,135 @@ local function drawdebug(v,p)
 			"thin"
 		)
 	end
+	if (TAKIS_DEBUGFLAG & DEBUG_PFLAGS)
+		drawflag(v,100,60,"FC",
+			V_HUDTRANS|V_PERPLAYER,
+			V_GREENMAP,V_REDMAP,
+			"small",
+			(p.pflags & PF_FLIPCAM)
+		)
+		drawflag(v,110,60,"AM",
+			V_HUDTRANS|V_PERPLAYER,
+			V_GREENMAP,V_REDMAP,
+			"small",
+			(p.pflags & PF_ANALOGMODE)
+		)
+		drawflag(v,120,60,"DC",
+			V_HUDTRANS|V_PERPLAYER,
+			V_GREENMAP,V_REDMAP,
+			"small",
+			(p.pflags & PF_DIRECTIONCHAR)
+		)
+		drawflag(v,130,60,"AB",
+			V_HUDTRANS|V_PERPLAYER,
+			V_GREENMAP,V_REDMAP,
+			"small",
+			(p.pflags & PF_AUTOBRAKE)
+		)
+		drawflag(v,140,60,"GM",
+			V_HUDTRANS|V_PERPLAYER,
+			V_GREENMAP,V_REDMAP,
+			"small",
+			(p.pflags & PF_GODMODE)
+		)
+		drawflag(v,150,60,"NC",
+			V_HUDTRANS|V_PERPLAYER,
+			V_GREENMAP,V_REDMAP,
+			"small",
+			(p.pflags & PF_NOCLIP)
+		)
+		drawflag(v,160,60,"IV",
+			V_HUDTRANS|V_PERPLAYER,
+			V_GREENMAP,V_REDMAP,
+			"small",
+			(p.pflags & PF_INVIS)
+		)
+		drawflag(v,170,60,"ad",
+			V_HUDTRANS|V_PERPLAYER,
+			V_GREENMAP,V_REDMAP,
+			"small",
+			(p.pflags & PF_ATTACKDOWN)
+		)
+		drawflag(v,180,60,"sd",
+			V_HUDTRANS|V_PERPLAYER,
+			V_GREENMAP,V_REDMAP,
+			"small",
+			(p.pflags & PF_SPINDOWN)
+		)
+		drawflag(v,190,60,"jd",
+			V_HUDTRANS|V_PERPLAYER,
+			V_GREENMAP,V_REDMAP,
+			"small",
+			(p.pflags & PF_JUMPDOWN)
+		)
+		drawflag(v,200,60,"wd",
+			V_HUDTRANS|V_PERPLAYER,
+			V_GREENMAP,V_REDMAP,
+			"small",
+			(p.pflags & PF_WPNDOWN)
+		)
+		drawflag(v,210,60,"Stasis not drawn",
+			V_HUDTRANS|V_PERPLAYER,
+			V_GREENMAP,0,
+			"small"
+		)
+		
+		drawflag(v,100,70,"AA",
+			V_HUDTRANS|V_PERPLAYER,
+			V_GREENMAP,V_REDMAP,
+			"small",
+			(p.pflags & PF_APPLYAUTOBRAKE)
+		)
+		drawflag(v,110,70,"sj",
+			V_HUDTRANS|V_PERPLAYER,
+			V_GREENMAP,V_REDMAP,
+			"small",
+			(p.pflags & PF_STARTJUMP)
+		)
+		drawflag(v,120,70,"ju",
+			V_HUDTRANS|V_PERPLAYER,
+			V_GREENMAP,V_REDMAP,
+			"small",
+			(p.pflags & PF_JUMPED)
+		)
+		drawflag(v,130,70,"nj",
+			V_HUDTRANS|V_PERPLAYER,
+			V_GREENMAP,V_REDMAP,
+			"small",
+			(p.pflags & PF_NOJUMPDAMAGE)
+		)
+		drawflag(v,140,70,"sp",
+			V_HUDTRANS|V_PERPLAYER,
+			V_GREENMAP,V_REDMAP,
+			"small",
+			(p.pflags & PF_SPINNING)
+		)
+		drawflag(v,150,70,"ss",
+			V_HUDTRANS|V_PERPLAYER,
+			V_GREENMAP,V_REDMAP,
+			"small",
+			(p.pflags & PF_STARTDASH)
+		)
+		drawflag(v,160,70,"th",
+			V_HUDTRANS|V_PERPLAYER,
+			V_GREENMAP,V_REDMAP,
+			"small",
+			(p.pflags & PF_THOKKED)
+		)
+		drawflag(v,170,70,"sa",
+			V_HUDTRANS|V_PERPLAYER,
+			V_GREENMAP,V_REDMAP,
+			"small",
+			(p.pflags & PF_SHIELDABILITY)
+		)
+		drawflag(v,100,70,"AA",
+			V_HUDTRANS|V_PERPLAYER,
+			V_GREENMAP,V_REDMAP,
+			"small",
+			(p.pflags & PF_APPLYAUTOBRAKE)
+		)
+		
+	end
 end
 
 //draw the stuff
@@ -2151,6 +2331,7 @@ customhud.SetupItem("lives", 				modname/*,	drawlivesarea,	"game",	10*/)
 customhud.SetupItem("takis_cfgnotifs", 		modname/*,	drawlivesarea,	"game",	10*/)
 customhud.SetupItem("takis_bonuses", 		modname/*,	drawlivesarea,	"game",	10*/)
 customhud.SetupItem("takis_crosshair", 		modname/*,	drawlivesarea,	"game",	10*/)
+customhud.SetupItem("takis_happyhourtime", 	modname/*,	drawlivesarea,	"game",	10*/)
 
 addHook("HUD", function(v,p)
 	if not p
@@ -2174,7 +2355,7 @@ addHook("HUD", function(v,p)
 	local me = p.mo
 	
 	if takis
-		
+		drawhappytime(v,p)
 		if takis.isTakis
 			
 			//customhud.SetupItem("takis_wareffect", 		modname/*,	drawfreeze,		"game",	1*/)
@@ -2192,6 +2373,7 @@ addHook("HUD", function(v,p)
 			customhud.SetupItem("takis_cfgnotifs", 		modname/*,	drawlivesarea,	"game",	10*/)
 			customhud.SetupItem("takis_bonuses", 		modname/*,	drawlivesarea,	"game",	10*/)
 			customhud.SetupItem("takis_crosshair", 		modname/*,	drawlivesarea,	"game",	10*/)
+			customhud.SetupItem("takis_happyhourtime", 	modname/*,	drawlivesarea,	"game",	10*/)
 		
 			if takis.io.nohappyhour == 0
 				customhud.SetupItem("ptje_itspizzatime",modname)
@@ -2306,31 +2488,29 @@ addHook("HUD", function(v,p)
 							drawhappyhour(v,p2)
 						end
 						
-						if (TAKIS_NET.usesheartcards == true)
 						
-							local workx = (265*FU)-(35*FU)
+						local workx = (265*FU)-(35*FU)
+						
+						//draw p2's heartcards
+						for i = 1, TAKIS_MAX_HEARTCARDS
+							local patch = v.cachePatch("HEARTCARD2")
 							
-							//draw p2's heartcards
-							for i = 1, TAKIS_MAX_HEARTCARDS
-								local patch = v.cachePatch("HEARTCARD2")
-								
-								if takis2.heartcards >= i
-									patch = v.cachePatch("HEARTCARD1")
-								end
-								
-								v.drawScaled(
-									workx,
-									100*FU,
-									FU/2,
-									patch,
-									V_SNAPTOTOP|V_SNAPTORIGHT|V_PERPLAYER
-								)
-								
-								workx = $+(12*FU)
-								
+							if takis2.heartcards >= i
+								patch = v.cachePatch("HEARTCARD1")
 							end
-						
+							
+							v.drawScaled(
+								workx,
+								100*FU,
+								FU/2,
+								patch,
+								V_SNAPTOTOP|V_SNAPTORIGHT|V_PERPLAYER
+							)
+							
+							workx = $+(12*FU)
+							
 						end
+					
 						
 						//show p2's combo
 						drawcombostuff(v,p2)
@@ -2421,14 +2601,23 @@ addHook("HUD", function(v,p)
 				v.cachePatch("ACH_BOX"),
 				trans|V_SNAPTORIGHT|V_SNAPTOBOTTOM
 			)
-			
 			v.drawScaled((300*FU)-118*FU+x,(200*FU)-bottom-(8*FU)+yadd,
-				t[enum].scale,
+				t[enum].scale or FU,
 				v.cachePatch(t[enum].icon),
 				trans|V_SNAPTORIGHT|V_SNAPTOBOTTOM
 			)
-			v.drawString((300*FU)-100*FU+x,(200*FU)-bottom-(8*FU)+yadd,t[enum].name,trans|V_SNAPTORIGHT|V_SNAPTOBOTTOM|V_ALLOWLOWERCASE|V_RETURN8,"thin-fixed")
-			v.drawString((300*FU)-100*FU+x,(200*FU)-bottom+yadd,t[enum].text,trans|V_SNAPTORIGHT|V_SNAPTOBOTTOM|V_ALLOWLOWERCASE|V_RETURN8,"small-fixed")
+			v.drawString((300*FU)-100*FU+x,
+				(200*FU)-bottom-(8*FU)+yadd,
+				t[enum].name or "Ach. Enum "..enum,
+				trans|V_SNAPTORIGHT|V_SNAPTOBOTTOM|V_ALLOWLOWERCASE|V_RETURN8,
+				"thin-fixed"
+			)
+			v.drawString((300*FU)-100*FU+x,
+				(200*FU)-bottom+yadd,
+				t[enum].text or "Flavor text goes here",
+				trans|V_SNAPTORIGHT|V_SNAPTOBOTTOM|V_ALLOWLOWERCASE|V_RETURN8,
+				"small-fixed"
+			)
 			
 			if takis.HUD.steam[k].tics == 0
 				table.remove(takis.HUD.steam,k)
