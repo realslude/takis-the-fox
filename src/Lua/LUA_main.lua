@@ -2002,7 +2002,9 @@ end)
 
 addHook("PlayerSpawn", function(p)
 	local x,y = ReturnTrigAngles(p.mo.angle)
-	P_SpawnMobjFromMobj(p.mo,100*x,100*y,0,MT_HHTRIGGER)
+	if not multiplayer
+		P_SpawnMobjFromMobj(p.mo,100*x,100*y,0,MT_HHTRIGGER)
+	end
 	
 	if p.takistable
 		local takis = p.takistable
