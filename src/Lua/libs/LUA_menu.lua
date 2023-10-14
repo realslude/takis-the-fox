@@ -106,25 +106,9 @@ tm.entries = {
 
 for i = 1,NUMACHIEVEMENTS
 	if i > 7
-		return
+		continue
 	end
 	table.insert(tm.entries[1].text,'')
 end
-
-/*
-rawset(_G,"Takis_AddMenuPage",function(title,color,text,table,value,commands)
-	if not title
-		error("arg1 (title) must be valid")
-	end
-	if not color
-		error("arg2 (bg color) must be valid")
-	end
-	
-	
-	title = tostring($)
-	
-	
-end)
-*/
 
 filesdone = $+1

@@ -82,6 +82,10 @@
 	-MORE EFFECTS!!
 	-placements in drawscore?
 	-happy hour trigger and exit objects
+	-dedicated servers may be breaking heart cards?
+	-[done]rings give too much score
+	-we may be loading other people's cfgs??
+	-[done]offset afterimages to start at salmon
 	
 	Dear Pesky Plumbers,
 
@@ -435,7 +439,7 @@ addHook("PlayerThink", function(p)
 						takis.clutchtime = 23
 						takis.clutchspamtime = 23
 						
-						if takis.clutchspamcount == 10
+						if takis.clutchspamcount == 5
 							TakisAwardAchievement(p,ACHIEVEMENT_CLUTCHSPAM)
 						end
 						
@@ -1024,14 +1028,14 @@ addHook("PlayerThink", function(p)
 				and takis.hammerblasthitbox.valid
 					local x = cos(p.drawangle)
 					local y = sin(p.drawangle)
-					
+					local z = me.z
 					if me.eflags & MFE_VERTICALFLIP
-						P_MoveOrigin(takis.hammerblasthitbox,me.x+(42*x)+me.momx,me.y+(42*y)+me.momy,
-							(me.z+me.height-takis.hammerblasthitbox.height)+(3*me.height/2)+me.momz
-						)
-					else
-						P_MoveOrigin(takis.hammerblasthitbox,me.x+(42*x)+me.momx,me.y+(42*y)+me.momy,me.z-(3*me.height/2)+me.momz)
+						z = (me.z+me.height-takis.hammerblasthitbox.height)
 					end
+					P_MoveOrigin(takis.hammerblasthitbox,me.x+(42*x)+me.momx,
+						me.y+(42*y)+me.momy,
+						z-(FixedMul(TAKIS_HAMMERDISP,me.scale)*takis.gravflip)+me.momz
+					)
 					TakisBreakAndBust(p,takis.hammerblasthitbox)
 				end
 				
@@ -1168,10 +1172,12 @@ addHook("PlayerThink", function(p)
 							searchBlockmap("objects", function(me, found)
 								if found and found.valid
 								and (found.health)
+									if (found.type == MT_EGGMAN_BOX)
+										return false
+									end
 									if (found.flags & (MF_ENEMY|MF_BOSS))
 									or (found.flags & MF_MONITOR)
 									or (found.takis_flingme)
-									and (found.type ~= MT_EGGMAN_BOX)
 										spawnragthing(found,me)
 									elseif (found.type == MT_PLAYER)
 										if CanPlayerHurtPlayer(p,found.player)
@@ -2810,7 +2816,7 @@ local function givecardpieces(mo, _, source)
 		if mo.takis_givecombotime
 		or mo.takis_givecardpieces
 		and not (gametyperules & GTR_RINGSLINGER)
-			P_AddPlayerScore(source.player,((source.player.takistable.accspeed>>16)/2) * 65)
+			P_AddPlayerScore(source.player,((source.player.takistable.accspeed>>16)/2) * 10)
 		end
 		
 	end
@@ -3080,7 +3086,17 @@ addHook("MobjMoveCollide",function(tm,t)
 				P_KillMobj(t,tm,tm)
 				return false
 			end
+		//fuck these shields in particular
+		elseif (t.type == MT_EGGSHIELD)
+			local gaurd = t.target
+			gaurd.flags = $|MF_ENEMY
+			P_KillMobj(t,tm,tm)
+			P_KillMobj(guard,tm,tm)
+		elseif (t.flags & MF_SOLID|MF_SCENERY == MF_SOLID|MF_SCENERY)
+		and not (t.flags & (MF_SPECIAL|MF_ENEMY|MF_MONITOR|MF_PUSHABLE))
+			return false
 		end
+		
 	end
 end,MT_PLAYER)
 

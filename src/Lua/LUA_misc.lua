@@ -200,6 +200,16 @@ addHook("ThinkFrame", do
 		end
 	end
 	
+	if (ultimatemode)
+		if TAKIS_MAX_HEARTCARDS ~= 1
+			TAKIS_MAX_HEARTCARDS = 1
+		end
+	else
+		if TAKIS_MAX_HEARTCARDS < 1
+			TAKIS_MAX_HEARTCARDS = 6
+		end
+	end
+	
 end)
 
 //after image
@@ -232,7 +242,7 @@ addHook("MobjThinker", function(ai)
 	ai.spriteyscale = ai.takis_spriteyscale or FU
 	ai.rollangle = ai.takis_rollangle or 0
 	
-	ai.frame = ai.takis_frame
+	ai.frame = ai.takis_frame|FF_TRANS30
 	
 	ai.colorized = true
 	if not ai.timealive
@@ -241,6 +251,7 @@ addHook("MobjThinker", function(ai)
 		ai.timealive = $+1
 	end
 	
+	/*
 	if p.takistable.io.additiveai
 		local transnum = numtotrans[((ai.timealive*2/3)+1) %9]
 		ai.frame = $|transnum
@@ -255,10 +266,7 @@ addHook("MobjThinker", function(ai)
 			end
 		end
 	end
-	
-	//no interpolation please fingers crossed???????
-	//i said PLEASE
-	P_MoveOrigin(ai, ai.x, ai.y, ai.z)
+	*/
 	
 	if not (camera.chase)
 		//only dontdraw afterimages that are too close to the player
@@ -279,7 +287,7 @@ addHook("MobjThinker", function(ai)
 	if p.takistable.io.additiveai
 		ai.blendmode = AST_ADD
 	else
-		ai.blendmode = 0
+		ai.blendmode = AST_TRANSLUCENT
 	end
 	
 	local fuselimit = 5
@@ -340,10 +348,12 @@ addHook("MobjThinker", function(rag)
 			if found and found.valid
 			and (found.health)
 			and (L_ZCollide(rag,found))
+				if (found.type == MT_EGGMAN_BOX)
+					return false
+				end
 				if (found.flags & (MF_ENEMY|MF_BOSS))
 				or (found.flags & MF_MONITOR)
 				or (found.takis_flingme)
-				and (found.type ~= MT_EGGMAN_BOX)
 					SpawnRagThing(found,rag,rag.parent2)
 				elseif (SPIKE_LIST[found.type] == true)
 					P_KillMobj(found,rag,rag.parent2)
@@ -400,10 +410,12 @@ addHook("MobjThinker", function(rag)
 		searchBlockmap("objects", function(helper, found)
 			if found and found.valid
 			and (found.health)
+				if (found.type == MT_EGGMAN_BOX)
+					return false
+				end
 				if (found.flags & (MF_ENEMY|MF_BOSS))
 				or (found.flags & MF_MONITOR)
 				or (found.takis_flingme)
-				and (found.type ~= MT_EGGMAN_BOX)
 					SpawnRagThing(found,helper,helper.parent2)
 				elseif (SPIKE_LIST[found.type] == true)
 					P_KillMobj(found,helper,helper.parent2)
@@ -710,6 +722,7 @@ local specsongs = {
 	["_drown"] = true,
 	["_inter"] = true,
 	["_clear"] = true,
+	["_abclr"] = true,
 }
 
 local function happyhourmus(oldname, newname, mflags,looping,pos,prefade,fade)
@@ -1415,7 +1428,7 @@ addHook("MobjThinker",function(drone)
 		if coolp.mare ~= #TAKIS_NET.ideyadrones-1
 			return
 		end
-		HH_Trigger(coolp.nightstime)
+		HH_Trigger(drone,coolp.nightstime)
 		coolp.mo.angle = coolp.drawangle
 		NiGHTSFreeroam(coolp)
 	end

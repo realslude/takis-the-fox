@@ -613,11 +613,11 @@ rawset(_G, "TakisDoShorts", function(p,me,takis)
 	end
 	
 	local lastspeed = takis.accspeed
-	takis.accspeed = abs(FixedHypot(FixedHypot(me.momx,me.momy),me.momz))
 	
 	local spd = 6*skins[me.skin].runspeed/5
 	if (p.powers[pw_carry] == CR_NIGHTSMODE)
 		spd = 23*FU
+		takis.accspeed = abs(FixedHypot(FixedHypot(me.momx,me.momy),me.momz))
 	end
 	
 	//wind effect
@@ -1167,12 +1167,13 @@ rawset(_G, "TakisCreateAfterimage", function(p,me)
 	print("@@",color,#skincolors-1,#skincolors)
 	*/
 	
+	local salnum = #skincolors[SKINCOLOR_SALMON]
 	p.takistable.afterimagecolor = $+1
-	if (p.takistable.afterimagecolor > #skincolors-1)
+	if (p.takistable.afterimagecolor > #skincolors-1-salnum)
 		p.takistable.afterimagecolor = 1
 	end
 	
-	ghost.color = p.takistable.afterimagecolor
+	ghost.color = salnum+p.takistable.afterimagecolor
 	ghost.takis_spritexscale,ghost.takis_spriteyscale = me.spritexscale, me.spriteyscale
 	ghost.takis_spritexoffset,ghost.takis_spriteyoffset = me.spritexoffset, me.spriteyoffset
 	ghost.takis_rollangle = me.rollangle
@@ -1721,21 +1722,21 @@ rawset(_G, "SpawnRagThing",function(tm,t,source)
 end)
 
 local getcomnum = {
-	[0] = sfx_comup0,
-	[1] = sfx_comup1,
-	[2] = sfx_comup2,
-	[3] = sfx_comup3,
-	[4] = sfx_comup4,
-	[5] = sfx_comup5,
-	[6] = sfx_comup6,
-	[7] = sfx_comup7,
-	[8] = sfx_comup8,
-	[9] = sfx_comup9,
-	[10] = sfx_comupa,
-	[11] = sfx_comupb,
-	[12] = sfx_comupc
+	[0] = sfx_tcmup0,
+	[1] = sfx_tcmup1,
+	[2] = sfx_tcmup2,
+	[3] = sfx_tcmup3,
+	[4] = sfx_tcmup4,
+	[5] = sfx_tcmup5,
+	[6] = sfx_tcmup6,
+	[7] = sfx_tcmup7,
+	[8] = sfx_tcmup8,
+	[9] = sfx_tcmup9,
+	[10] = sfx_tcmupa,
+	[11] = sfx_tcmupb,
+	[12] = sfx_tcmupc
 }
-rawset(_G, "TakisGiveCombo",function(p,takis,add,max,remove)
+rawset(_G, "TakisGiveCombo",function(p,takis,add,max,remove,shared)
 	if (p.powers[pw_carry] == CR_NIGHTSMODE)
 	or not (gametyperules & GTR_FRIENDLY)
 	or (maptol & TOL_NIGHTS)
@@ -1749,6 +1750,9 @@ rawset(_G, "TakisGiveCombo",function(p,takis,add,max,remove)
 	end
 	if remove == nil
 		remove = false
+	end
+	if shared == nil
+		shared = false
 	end
 	
 	if add == true
@@ -1780,6 +1784,23 @@ rawset(_G, "TakisGiveCombo",function(p,takis,add,max,remove)
 		end
 		
 		takis.combo.time = TAKIS_MAX_COMBOTIME
+		
+		if (takis.io.sharecombos == 1)
+		and not shared
+			for p2 in players.iterate
+				if not (p2 and p2.valid) then continue end
+				if p2 == p then continue end
+				if p2.quittime then continue end
+				if p2.spectator then continue end
+				if not (p2.mo and p2.mo.valid) then continue end
+				if (not p2.mo.health) or (p2.playerstate ~= PST_LIVE) then continue end
+				if (p2.mo.skin ~= TAKIS_SKIN) then continue end
+				if (p2.takistable.io.sharecombos == 0) then continue end
+				
+				TakisGiveCombo(p2,p2.takistable,true,nil,nil,true)
+				
+			end
+		end
 	else
 		if not takis.combo.count
 			return
@@ -1860,10 +1881,6 @@ rawset(_G, "TakisSpawnDeadBody", function(p, me, soap)
 end)
 
 rawset(_G, "TakisDeathThinker",function(p,me,takis)
-	print("ASD",
-		me.state,
-		me.sprite2
-	)
 	//explosion anim
 	if me.sprite2 == SPR2_TDED
 		if p.deadtimer < 21
@@ -1993,12 +2010,14 @@ end
 local blerp0 = {
 	["ULTIMATE"] = 0,
 	["SHOTGUN"] = 0,
+	["HAPPYHOUR"] = 0,
 	["HEART"] = 0,
 	["HEARTPIECE"] = 0,
 }
 local blerp1 = {
 	["ULTIMATE"] = 0,
 	["SHOTGUN"] = 0,
+	["HAPPYHOUR"] = 0,
 	["HEART"] = 0,
 	["HEARTPIECE"] = 0,
 }
@@ -2077,6 +2096,27 @@ rawset(_G,"TakisDrawBonuses", function(v, p, x, y, flags, salign, dist, angle)
 	else
 		DoShift(lerp["ULTIMATE"], angle)
 		DoLerp("ULTIMATE", true, dist)
+	end
+	
+	if bonus["happyhour"].tics
+		local trans = 0
+		if bonus["happyhour"].tics > 3*TR+9
+			trans = (bonus["happyhour"].tics-(3*TR+9))<<V_ALPHASHIFT
+		elseif bonus["happyhour"].tics < 10
+			trans = (10-bonus["happyhour"].tics)<<V_ALPHASHIFT
+		end
+		
+		v.drawString(x+lerpx, y+lerpy, 
+			"+"..bonus["happyhour"].score.." - "..bonus["happyhour"].text, 
+			flags|trans, salign
+		)
+		
+		bonus["happyhour"].tics = $-1
+		DoShift(lerp["HAPPYHOUR"], angle)
+		DoLerp("HAPPYHOUR", false, dist)
+	else
+		DoShift(lerp["HAPPYHOUR"], angle)
+		DoLerp("HAPPYHOUR", true, dist)
 	end
 	
 	for k,val in ipairs(bonus.cards)
@@ -2372,6 +2412,7 @@ rawset(_G,"TakisPowerfulArma",function(p)
 			(found.type == MT_BOMBSPHERE))
 				P_KillMobj(found,me,me)
 			elseif found.flags & (MF_ENEMY|MF_BOSS)
+			or found.takis_flingme
 				P_KillMobj(found,me,me)
 			end
 		end

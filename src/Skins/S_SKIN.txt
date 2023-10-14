@@ -25,6 +25,8 @@ revitem = MT_NULL
 contspeed = 7
 contangle = 0
 
+height = 52
+
 jumpfactor = 1.32
 
 dsjump = dsantjum

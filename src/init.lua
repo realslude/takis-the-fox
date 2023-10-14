@@ -59,12 +59,7 @@ local filelist = {
 //
 
 rawset(_G, "filesdone", 0)
-rawset(_G, "NUMFILES", (#guh)+(#filelistt1)+(#filelist)-1)
-
-local function dofile2(file)
-	dofile(file)
-end
-
+rawset(_G, "NUMFILES", (#guh)+(#filelistt1)+(#filelist))
 
 rawset(_G, "takis_printdebuginfo",function(p)
 	if not p
@@ -110,23 +105,25 @@ local pre = "LUA_"
 local suf = ".lua"
 
 for k,v in ipairs(guh)
-	dofile2(pre..v)
+	dofile(pre..v)
+	print("Done "..filesdone.." file(s)")
 end
 
 for k,v in ipairs(filelistt1)
-	dofile2("libs/".. pre..v..suf)
+	dofile("libs/".. pre..v..suf)
+	print("Done "..filesdone.." file(s)")
 end
 
 for k,v in ipairs(filelist)
-	dofile2(pre..v..suf)
+	dofile(pre..v..suf)
+	print("Done "..filesdone.." file(s)")
 end
-
-print("Did init.lua\n")
 
 takis_printdebuginfo()
 
 if filesdone ~= NUMFILES
 	print("\x85"..(NUMFILES-filesdone).." file(s) were not executed.\n")
+	print("\x85This may not be ")
 	S_StartSound(nil,sfx_skid)
 end
 

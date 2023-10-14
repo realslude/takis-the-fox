@@ -10,7 +10,8 @@ local function drawheartcards(v,p)
 	local amiinsrbz = false
 	
 	if (gametype == GT_SRBZ)
-		if not p.chosecharacter
+		if (not p.chosecharacter)
+		or p.shop_open
 			amiinsrbz = true
 		end
 	end
@@ -23,6 +24,7 @@ local function drawheartcards(v,p)
 	
 	local xoff = 20*FU
 	local takis = p.takistable
+	local halfwidth = (v.width()*FU)/4
 	
 	local maxx = (15*FU)*TAKIS_MAX_HEARTCARDS
 	if TAKIS_MAX_HEARTCARDS > 6
@@ -43,15 +45,14 @@ local function drawheartcards(v,p)
 		local eflag = V_HUDTRANS
 		
 		local patch = v.cachePatch("HEARTCARD1")
+		if ultimatemode
+			patch = v.cachePatch("HEARTCARD3")
+		end
+		
 		if TAKIS_MAX_HEARTCARDS-i > takis.heartcards-1
 		or p.spectator
-		or ultimatemode
 			patch = v.cachePatch("HEARTCARD2")
-		/*	if ultimatemode
-			and p.playerstate == PST_LIVE
-				patch = v.cachePatch("HEARTCARD3")
-			end
-		*/	if p.spectator
+			if p.spectator
 				eflag = V_HUDTRANSHALF
 			end
 		end				
@@ -61,7 +62,7 @@ local function drawheartcards(v,p)
 			add = 3*FU
 		end
 		
-		if ultimatemode
+		if TAKIS_MAX_HEARTCARDS == 1
 			add = 0
 		end
 		
@@ -90,13 +91,11 @@ local function drawheartcards(v,p)
 		local flags = V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER|eflag
 		//draw from last to first
 		v.drawScaled(maxx-((13*FU)*j)+xoff+shakex,15*FU+add-takis.HUD.heartcards.add+shakey,4*FU/5, patch, flags)
-		//v.drawScaled(15*FU,15*FU,4*FU/5, v.cachePatch("HEARTCARD1"), V_SNAPTOLEFT|V_SNAPTOTOP|V_HUDTRANS)
-		
 	end
 
 	//heal indc.
 	if takis.heartcards ~= TAKIS_MAX_HEARTCARDS
-	and not (ultimatemode or takis.fakeexiting)
+	and not (takis.fakeexiting)
 		v.drawString((maxx/FU)+10+(xoff/FU),15+4,takis.heartcardpieces,V_SNAPTOLEFT|V_SNAPTOTOP|V_HUDTRANS|V_PERPLAYER,"thin")
 		v.drawString((maxx/FU)+10+4+(xoff/FU),15+4+4,"/",V_SNAPTOLEFT|V_SNAPTOTOP|V_HUDTRANS|V_PERPLAYER,"thin")
 		v.drawString((maxx/FU)+10+7+(xoff/FU),15+8+3-2+4,"7",V_SNAPTOLEFT|V_SNAPTOTOP|V_HUDTRANS|V_PERPLAYER,"thin")
@@ -221,7 +220,8 @@ local function drawface(v,p)
 	local amiinsrbz = false
 	
 	if (gametype == GT_SRBZ)
-		if not p.chosecharacter
+		if (not p.chosecharacter)
+		or p.shop_open
 			amiinsrbz = true
 		end
 	end
@@ -229,6 +229,7 @@ local function drawface(v,p)
 	if p.takistable.inNIGHTSMode
 	or (TAKIS_NET.inspecialstage)
 	or amiinsrbz
+
 		return
 	end
 
@@ -266,10 +267,9 @@ local function drawface(v,p)
 	local y = 0
 	local expectedtime = TR
 	
-	if ( ((JISK_PIZZATIMETICS) and (JISK_PIZZATIMETICS <= 3*TR))
-	or ((PTJE) and (PTJE.pizzatime_tics) and (PTJE.pizzatime_tics <= 3*TR)) )
+	if HAPPY_HOUR.time and HAPPY_HOUR.time < 3*TR
 	and (takis.io.nohappyhour == 0)
-		local tics = JISK_PIZZATIMETICS or PTJE.pizzatime_tics
+		local tics = HAPPY_HOUR.time
 		
 		if (tics < 2*TR)
 			y = ease.inquad(( FU / expectedtime )*tics, 0, -60*FU)
@@ -958,7 +958,7 @@ local function drawcombostuff(v,p)
 		if takis.combo.cashable
 			v.drawString(backx+5*comboscale+(FixedMul(patchx,comboscale)),
 				backy-2*comboscale,
-				"C2+C3: Cash in!",
+				"C1+C2: Cash in!",
 				V_ALLOWLOWERCASE|V_GREENMAP|V_HUDTRANS|V_SNAPTOLEFT|V_SNAPTOTOP,
 				"thin-fixed-center"
 			)
@@ -1237,7 +1237,7 @@ local function hhtimerbase(v,p)
 		tics = 0
 	end
 	
-	local min = G_TicsToMinutes(tics,true)
+	local min = tics/(60*TR) //G_TicsToMinutes(tics,true)
 	local sec = G_TicsToSeconds(tics)
 	local cen = G_TicsToCentiseconds(tics)
 	local spad,cpad,extrastring = '','',''
@@ -1257,8 +1257,21 @@ local function hhtimerbase(v,p)
 	local h = takis.HUD.ptje
 		
 	local frame = ((5*leveltime/6)%14)
+	local patch
+	local trig = HAPPY_HOUR.trigger
+	if (trig and trig.valid)
+	and (trig.type == MT_HHTRIGGER)
+		patch = v.getSpritePatch(SPR_HHT_,trig.frame,0)
+	else
+		patch = v.cachePatch("TAHHS"..frame)
+	end
+	
+	if not (HAPPY_HOUR.othergt)
+		h.xoffset = -GetInternalFontWidth(tostring(string),TAKIS_HAPPYHOURFONT)/7
+	end
+	
 	if not (takis.inNIGHTSMode)
-		v.drawScaled(110*FU+(h.xoffset*FU),168*FU+(h.yoffset),FU,v.cachePatch("TAHHS"..frame),V_HUDTRANS|V_SNAPTOBOTTOM)
+		v.drawScaled(110*FU+(h.xoffset*FU),168*FU+(h.yoffset),FU,patch,V_HUDTRANS|V_SNAPTOBOTTOM)
 		TakisDrawPatchedText(v, 150+(h.xoffset), 173+(h.yoffset/FU), tostring(string),{font = TAKIS_HAPPYHOURFONT, flags = (V_SNAPTOBOTTOM|V_HUDTRANS), align = 'left', scale = 4*FU/5})
 	else
 		if (p.exiting) then return end
@@ -1286,6 +1299,10 @@ end
 
 local function drawhappytime(v,p)
 	if (customhud.CheckType("takis_happyhourtime") != modname) return end
+	
+	if HAPPY_HOUR.othergt
+		return
+	end
 	
 	hhtimerbase(v,p)
 end
@@ -1572,7 +1589,7 @@ local function drawtauntmenu(v,p)
 	v.drawString(305*FU,(75*FU)+yadd,"Hit C1 to Cancel",V_ALLOWLOWERCASE|V_HUDTRANS,"thin-fixed-right")
 	v.drawString(15*FU,(90*FU)+yadd,"Hit C3 to join a Partner Taunt",V_ALLOWLOWERCASE|V_HUDTRANS,"thin-fixed")
 	v.drawString(305*FU,(86*FU)+yadd,"Quick Taunt: TF+#+C2/C3",V_ALLOWLOWERCASE|V_HUDTRANS,"small-fixed-right")
-	v.drawString(305*FU,(94*FU)+yadd,"Press FIRE to delete Quick Taunt",V_ALLOWLOWERCASE|V_HUDTRANS,"small-fixed-right")
+	v.drawString(305*FU,(94*FU)+yadd,"Delete Quick Taunt: TF+Fire+C2/C3",V_ALLOWLOWERCASE|V_HUDTRANS,"small-fixed-right")
 	v.drawScaled(160*FU,100*FU+yadd,FU/2,v.cachePatch("TAUNTSEPAR"),0,nil)
 	
 	local ydisp = 25*FU
@@ -2308,6 +2325,9 @@ local function drawdebug(v,p)
 		)
 		
 	end
+	if (TAKIS_DEBUGFLAG & DEBUG_DEATH)
+		
+	end
 end
 
 //draw the stuff
@@ -2458,6 +2478,7 @@ addHook("HUD", function(v,p)
 			customhud.SetupItem("lives","vanilla")
 			if takis.io.morehappyhour == 0
 				customhud.SetupItem("ptje_itspizzatime","jiskpizzatime")
+				customhud.SetupItem("ptje_bar","jiskpizzatime")
 			else
 				customhud.SetupItem("ptje_itspizzatime",modname)
 				drawhappyhour(v,p)			

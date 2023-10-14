@@ -30,6 +30,7 @@ local dbgflags = {
 	"ALIGNER",
 	"PFLAGS",
 	"BLOCKMAP",
+	"DEATH",
 }
 for k,v in ipairs(dbgflags)
 	rawset(_G,"DEBUG_"..v,1<<(k-1))
@@ -151,6 +152,7 @@ rawset(_G, "TAKIS_NET", {
 	
 	ideyadrones = {},
 })
+rawset(_G, "TAKIS_HAMMERDISP", FixedMul(52*FU,9*FU/10))
 
 freeslot("MT_TAKIS_TAUNT_HITBOX")
 freeslot("S_TAKIS_TAUNT_HITBOX")
@@ -304,6 +306,7 @@ rawset(_G, "TakisInitTable", function(p)
 			hasfile = false,
 			loaded = false,
 			loadwait = 25,
+			
 			nostrafe = 0,
 			nohappyhour = 0,
 			happyhourstyle = 1, //1 for new, 2 for old
@@ -315,6 +318,7 @@ rawset(_G, "TakisInitTable", function(p)
 			additiveai = 0,
 			ihavemusicwad = 0, //samus-like check for music stuff
 			clutchstyle = 0,
+			sharecombos = 1,
 		},
 		//tf2 taunt menu lol
 		//up to 7 taunts, detected with BT_WEAPONMASK
@@ -382,6 +386,11 @@ rawset(_G, "TakisInitTable", function(p)
 				tics = 0, 
 				score = 0,
 				text = "\x82Ultimate Combo"
+			},
+			["happyhour"] = {
+				tics = 0, 
+				score = 0,
+				text = "\x85Happy Hour trigger"
 			},
 			cards = {},
 			cardpieces = {},
@@ -566,7 +575,7 @@ rawset(_G, "TakisInitTable", function(p)
 	//now we can tell if this actually worked or not
 	CONS_Printf(p, "\n"+"\x82"+"Initialized Takis' stuff!")
 	CONS_Printf(p, "Check out the enclosed instruction book!")
-	CONS_Printf(p, "	https://docs.google.com/document/d/1EWGP2foZ4RIu-DDnI_w3uyn3F4tVhfEIxNqDx94m9y4/edit?usp=sharing")
+	CONS_Printf(p, "	https://tinyurl.com/mr45rtzz")
 
 	CONS_Printf(p, "\n \x83Made by luigi budd")
 	takis_printwarning(p)
@@ -739,15 +748,15 @@ sfxinfo[sfx_didbad].caption = "/"
 SafeFreeslot("sfx_fastfl")
 sfxinfo[sfx_fastfl].caption = "/"
 for i = 0, 9
-	SafeFreeslot("sfx_comup"..i)
-	sfxinfo[sfx_comup0 + i].caption = "\x83".."Combo up!\x80"
+	SafeFreeslot("sfx_tcmup"..i)
+	sfxinfo[sfx_tcmup0 + i].caption = "\x83".."Combo up!\x80"
 end
-SafeFreeslot("sfx_comupa")
-SafeFreeslot("sfx_comupb")
-SafeFreeslot("sfx_comupc")
-sfxinfo[sfx_comupa].caption = "\x83".."Combo up!\x80"
-sfxinfo[sfx_comupb].caption = "\x83".."Combo up!\x80"
-sfxinfo[sfx_comupc].caption = "\x83".."Combo up!\x80"
+SafeFreeslot("sfx_tcmupa")
+SafeFreeslot("sfx_tcmupb")
+SafeFreeslot("sfx_tcmupc")
+sfxinfo[sfx_tcmupa].caption = "\x83".."Combo up!\x80"
+sfxinfo[sfx_tcmupb].caption = "\x83".."Combo up!\x80"
+sfxinfo[sfx_tcmupc].caption = "\x83".."Combo up!\x80"
 
 --spr_ freeslot
 
@@ -1099,7 +1108,6 @@ mobjinfo[MT_TAKIS_SHOTGUN_HITBOX] = {
 addHook("NetVars",function(n)
 	TAKIS_NET = n($)
 	TAKIS_MAX_HEARTCARDS = n($)
-	TAKIS_MENU = n($)
 end)
 
 filesdone = $+1

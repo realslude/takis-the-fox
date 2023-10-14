@@ -224,7 +224,7 @@ end)
 
 COM_AddCommand("takis_instructions", function(p)
 	CONS_Printf(p, "Check out the enclosed instruction book!")
-	CONS_Printf(p, "	https://docs.google.com/document/d/1EWGP2foZ4RIu-DDnI_w3uyn3F4tVhfEIxNqDx94m9y4/edit?usp=sharing")
+	CONS_Printf(p, "	https://tinyurl.com/mr45rtzz")
 	CONS_Printf(p, "Open your latest-log.txt and copy the link into your browser!")
 end)
 

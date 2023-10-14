@@ -185,5 +185,33 @@ COM_AddCommand("setdebug", function(p,...)
 	
 end,COM_ADMIN)
 
+COM_AddCommand("panic", function(p,tics,flags)
+	if gamestate ~= GS_LEVEL
+		prn(p,"You can't use this right now.")
+		return
+	end
+	
+	if tics == nil
+		return
+	end
+	
+	if flags == nil
+		flags = 0
+	end
+	
+	flags = abs(tonumber($)) or 0
+	
+	tics = abs(tonumber($)) or 0
+	
+	if (flags & 1 == 1)
+		tics = $*TR
+	elseif (flags & 2 == 2)
+		tics = $*60*TR
+	end
+	
+	//erm,, whatevre, set it to the playher
+	HH_Trigger(p.mo,tics)
+	
+end,COM_ADMIN)
 
 filesdone = $+1
