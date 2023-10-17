@@ -37,8 +37,8 @@ rawset(_G,"HH_Trigger",function(actor,timelimit)
 	local tag = actor.lastlook
 	if (actor.type == MT_HHTRIGGER)
 		tag = AngleFixed(actor.angle)/FU
+		P_LinedefExecute(tag,actor,nil)
 	end
-	P_LinedefExecute(tag,actor,nil)
 	hh.trigger = actor
 end)
 
@@ -81,6 +81,7 @@ addHook("ThinkFrame",do
 							if not (p.mo and p.mo.valid) then continue end
 							//already dead
 							if (not p.mo.health) or (p.playerstate ~= PST_LIVE) then continue end
+							if (p.exiting or p.pflags & PF_FINISHED) then continue end
 							P_KillMobj(p.mo)
 						end
 					end

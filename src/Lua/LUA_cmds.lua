@@ -145,7 +145,7 @@ COM_AddCommand("takis_dojumpscare", function(p,node)
 	if p2
 		local takis = p2.takistable
 		if (skins[p2.skin].name == TAKIS_SKIN)
-			TakisAwardAchievement(p,ACHIEVEMENT_JUMPSCARE)
+			TakisAwardAchievement(p2,ACHIEVEMENT_JUMPSCARE)
 		end
 		S_StartSound(nil,sfx_jumpsc,p2)
 		takis.HUD.funny.tics = 3*TR
@@ -419,7 +419,7 @@ COM_AddCommand("takis_ihavethemusicwad", function(p)
 		prn(p,"\x82Just gonna assume you've downloaded TakisMusic.pk3! Takis will start loading it on spawn!")
 		takis.io.ihavemusicwad = 1
 		if (p and p.valid)
-			COM_BufInsertText(p, "addfile takismusic.pk3; tunes -none")
+			COM_BufInsertText(p, "addfile takismusic.pk3; tunes -nones")
 		elseif consoleplayer
 			COM_BufInsertText(consoleplayer, "addfile takismusic.pk3; tunes -none")
 		end
@@ -427,6 +427,27 @@ COM_AddCommand("takis_ihavethemusicwad", function(p)
 	else
 		prn(p,"\x82You have TakisMusic.pk3 downloaded or loaded, Takis will add it on load.")
 	end
+	TakisSaveStuff(p)
+end)
+COM_AddCommand("takis_clutchstyle", function(p)
+	if gamestate ~= GS_LEVEL
+		prn(p,"You can't use this right now.")
+		return
+	end
+	
+	if not (p.takistable)
+		prn(p,"You can't use this right now.")
+		return	
+	end
+	
+	if p.takistable.io.clutchstyle
+		p.takistable.io.additiveai = 0
+		prn(p,"The Clutch Bar will now be near the lives area.")
+	else
+		p.takistable.io.clutchstyle = 1
+		prn(p,skins[TAKIS_SKIN].realname.." will now have additive afterimages.")
+	end
+	
 	TakisSaveStuff(p)
 end)
 

@@ -5,6 +5,6 @@ current todo:
 -[done]GET TAYKIS ONTO GUTHUB lel
 -[done]GET A BUILDER THAT BUILDS TO PK3 AND ADDS BUILD DATES
 -gitignore?
--aseprite assets and all dat?
+-[done]aseprite assets and all dat?
 -structure this like a real repo lol
--find a way to easily manage prs and github while still developing in the srb2 dir. maybe a builder can fix this?
+-[done]find a way to easily manage prs and github while still developing in the srb2 dir. maybe a builder can fix this?

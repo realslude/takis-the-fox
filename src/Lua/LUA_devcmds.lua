@@ -134,6 +134,7 @@ local shields = {
 	["t"] = SH_THUNDERCOIN,
 	["f"] = SH_FORCE|1,
 	["ff"] = SH_FIREFLOWER,
+	["n"] = SH_NONE,
 }
 
 COM_AddCommand("shield", function(p,sh)
@@ -150,7 +151,9 @@ COM_AddCommand("shield", function(p,sh)
 	
 	if shields[sh]
 		p.powers[pw_shield] = shields[sh]
-		P_SpawnShieldOrb(p)
+		if shields[sh] ~= 0
+			P_SpawnShieldOrb(p)
+		end
 	end
 	
 end,COM_ADMIN)
@@ -211,6 +214,34 @@ COM_AddCommand("panic", function(p,tics,flags)
 	
 	//erm,, whatevre, set it to the playher
 	HH_Trigger(p.mo,tics)
+	
+end,COM_ADMIN)
+
+COM_AddCommand("shotgun", function(p,tics)
+	if gamestate ~= GS_LEVEL
+		prn(p,"You can't use this right now.")
+		return
+	end
+	
+	if not (p.takistable)
+		prn(p,"You can't use this right now.")
+		return	
+	end
+	
+	if not (p.mo.health)
+	or (p.mo.skin ~= TAKIS_SKIN)
+		prn(p,"You can't use this right now.")
+		return	
+	end
+	
+	local takis = p.takistable
+	
+	if (takis.shotgunned)
+		TakisDeShotgunify(p)
+	
+	else
+		TakisShotgunify(p)
+	end
 	
 end,COM_ADMIN)
 

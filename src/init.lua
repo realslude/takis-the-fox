@@ -123,7 +123,6 @@ takis_printdebuginfo()
 
 if filesdone ~= NUMFILES
 	print("\x85"..(NUMFILES-filesdone).." file(s) were not executed.\n")
-	print("\x85This may not be ")
 	S_StartSound(nil,sfx_skid)
 end
 

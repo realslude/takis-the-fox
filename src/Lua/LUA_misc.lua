@@ -161,7 +161,7 @@ addHook("ThinkFrame", do
 	local nump = 0
 	local numt = 0
 	local exitors = 0
-	local pizzatime = ( ((PTJE) and (PTJE.pizzatime)) or ((PTBE) and (PTBE.pizzatime)) )
+	local pizzatime = HAPPY_HOUR.happyhour
 	for p in players.iterate
 		if not p
 		or not p.valid
@@ -181,6 +181,22 @@ addHook("ThinkFrame", do
 		end
 		if p.exiting or p.spectator or (p.pizzaface or (p.playerstate == PST_DEAD and pizzatime))
 			exitors = $+1
+		end
+		
+		if not p.takistable
+			continue
+		end
+		
+		if ((p.mo) and (p.mo.valid))
+			if p.mo.skin ~= TAKIS_SKIN
+				continue
+			end
+			
+			if p.pflags & PF_SLIDING
+				p.takistable.inwaterslide = true
+			else
+				p.takistable.inwaterslide = false
+			end
 		end
 		
 	end
@@ -341,6 +357,8 @@ addHook("MobjThinker", function(rag)
 		poof.fuse = 10				
 	end
 	//do hitboxes
+		local oldbox = {rag.radius,rag.height}
+		
 		local px = rag.x
 		local py = rag.y
 		local br = FixedDiv(rag.radius*5/2,2*FU)
@@ -684,47 +702,6 @@ addHook("MobjDeath",function(mo,i,s)
 	
 end,MT_SPIKEBALL)
 
-//this is stupid
-addHook("ThinkFrame", function()
-	for p in players.iterate
-		if not p
-		or not p.valid
-			continue
-		end
-		
-		if not p.takistable
-			continue
-		end
-		
-		if ((p.mo) and (p.mo.valid))
-			if p.mo.skin ~= TAKIS_SKIN
-				continue
-			end
-			
-			if p.pflags & PF_SLIDING
-				p.takistable.inwaterslide = true
-			else
-				p.takistable.inwaterslide = false
-			end
-		end
-	end
-end)
-
-//DONT change to happy hour if the song is any one of these
-local specsongs = {
-	["_1up"] = true,
-	["_shoes"] = true,
-	["_minv"] = true,
-	["_inv"] = true,
-	["hpyhre"] = true,
-	["hapyhr"] = true,
-	["hpyhr2"] = true,
-	["_drown"] = true,
-	["_inter"] = true,
-	["_clear"] = true,
-	["_abclr"] = true,
-}
-
 local function happyhourmus(oldname, newname, mflags,looping,pos,prefade,fade)
 	if splitscreen
 		return
@@ -759,7 +736,7 @@ local function happyhourmus(oldname, newname, mflags,looping,pos,prefade,fade)
 		
 		//stop any lap music
 		if pizzatime 
-		and (specsongs[newname] ~= true)
+		and (TAKIS_NET.specsongs[newname] ~= true)
 		
 			local changetohappy = true
 			
@@ -801,7 +778,7 @@ local function happyhourmus(oldname, newname, mflags,looping,pos,prefade,fade)
 		
 		local newname = string.lower(newname)
 		
-		if (specsongs[newname] ~= true)
+		if (TAKIS_NET.specsongs[newname] ~= true)
 			return ReturnTakisMusic("war",consoleplayer),mflags,looping,pos,prefade,fade
 		end
 	end
@@ -1522,16 +1499,29 @@ addHook("MobjDeath",function(brak,_,sor)
 		return
 	end
 	
-	TakisAwardAchievement(sor.player,ACHIEVEMENT_BRAKMAN)
-end,MT_CYBRAKDEMON)
-
-addHook("MobjSpawn",function(egg)
-	if not egg
-	or not egg.valid
+	if (sor.skin ~= TAKIS_SKIN)
 		return
 	end
 	
-	egg.takis_flingme = true
-end,MT_EGGROBO1)
+	TakisAwardAchievement(sor.player,ACHIEVEMENT_BRAKMAN)
+end,MT_CYBRAKDEMON)
+
+local function makefling(mo)
+	if not mo
+	or not mo.valid
+		return
+	end
+	
+	mo.takis_flingme = true
+
+end
+
+local flinglist = {
+	MT_EGGROBO1,
+}
+
+for k,type in pairs(flinglist)
+	addHook("MobjSpawn",makefling,type)
+end
 
 filesdone = $+1

@@ -25,6 +25,7 @@ local function drawheartcards(v,p)
 	local xoff = 20*FU
 	local takis = p.takistable
 	local halfwidth = (v.width()*FU)/4
+	local me = p.mo
 	
 	local maxx = (15*FU)*TAKIS_MAX_HEARTCARDS
 	if TAKIS_MAX_HEARTCARDS > 6
@@ -37,6 +38,9 @@ local function drawheartcards(v,p)
 	//heart cards
 	for i = 1, TAKIS_MAX_HEARTCARDS do
 		
+		local maxline = 14
+		local linebreak = i/maxline
+		
 		local j = i
 		if (TAKIS_MAX_HEARTCARDS == 1)
 			j = 0
@@ -44,6 +48,7 @@ local function drawheartcards(v,p)
 		
 		local eflag = V_HUDTRANS
 		
+		//patch
 		local patch = v.cachePatch("HEARTCARD1")
 		if ultimatemode
 			patch = v.cachePatch("HEARTCARD3")
@@ -55,10 +60,14 @@ local function drawheartcards(v,p)
 			if p.spectator
 				eflag = V_HUDTRANSHALF
 			end
-		end				
+		end			
+		//
+		
+		//always make the first card (onscreen) go up
 		local add = -3*FU
-				
-		if (i%2)
+		local iseven = TAKIS_MAX_HEARTCARDS%2 == 0
+		if (i%2 and iseven)
+		or (not (i%2) and not iseven)
 			add = 3*FU
 		end
 		
@@ -66,6 +75,7 @@ local function drawheartcards(v,p)
 			add = 0
 		end
 		
+		//shake
 		local shakex,shakey = 0,0
 				
 		if takis.HUD.heartcards.shake
@@ -87,15 +97,20 @@ local function drawheartcards(v,p)
 			shakex = $*s*d1
 			shakey = $*s*d2
 		end
-
-		local flags = V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER|eflag
+		//
+		
 		//draw from last to first
-		v.drawScaled(maxx-((13*FU)*j)+xoff+shakex,15*FU+add-takis.HUD.heartcards.add+shakey,4*FU/5, patch, flags)
+		local flags = V_SNAPTOLEFT|V_SNAPTOTOP|V_PERPLAYER|eflag
+		v.drawScaled(maxx-((13*FU)*j)+xoff+shakex,
+			15*FU+add-takis.HUD.heartcards.add+shakey,
+			4*FU/5, patch, flags
+		)
 	end
 
 	//heal indc.
 	if takis.heartcards ~= TAKIS_MAX_HEARTCARDS
 	and not (takis.fakeexiting)
+	and (me.health or p.playerstate == PST_LIVE)
 		v.drawString((maxx/FU)+10+(xoff/FU),15+4,takis.heartcardpieces,V_SNAPTOLEFT|V_SNAPTOTOP|V_HUDTRANS|V_PERPLAYER,"thin")
 		v.drawString((maxx/FU)+10+4+(xoff/FU),15+4+4,"/",V_SNAPTOLEFT|V_SNAPTOTOP|V_HUDTRANS|V_PERPLAYER,"thin")
 		v.drawString((maxx/FU)+10+7+(xoff/FU),15+8+3-2+4,"7",V_SNAPTOLEFT|V_SNAPTOTOP|V_HUDTRANS|V_PERPLAYER,"thin")
@@ -304,6 +319,7 @@ local function drawrings(v,p)
 	
 	if p.rings == 0
 	and takis.heartcards <= 0
+	and not (p.exiting)
 		flash = true
 	end
 			
@@ -741,21 +757,28 @@ local function drawlivesarea(v,p)
 	end
 	
 	if (takis.clutchcombo)
+	and (takis.io.clutchstyle == 0)
 		disp = $-20
 	end
 	
 	if (takis.shotgunned)
-		v.drawScaled(hudinfo[HUD_LIVES].x*FU, (hudinfo[HUD_LIVES].y+disp)*FU, (FU/2)+(FU/12), v.cachePatch("TB_C3"), V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_PERPLAYER|V_HUDTRANS,v.getColormap(nil, nil))
+		v.drawScaled(hudinfo[HUD_LIVES].x*FU, (hudinfo[HUD_LIVES].y+disp)*FU, (FU/2)+(FU/12), v.cachePatch("TB_C3"), V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_PERPLAYER|V_HUDTRANS)
 		v.drawString(hudinfo[HUD_LIVES].x+20, hudinfo[HUD_LIVES].y+(disp+5), "Un-Shotgun",V_ALLOWLOWERCASE|V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_PERPLAYER|V_HUDTRANS, "small")	
 		disp = $-20
 	end
 	
-	if (p.powers[pw_shield] ~= CR_NONE)
+	if (p.powers[pw_shield] ~= SH_NONE)
 		local shieldflag = V_HUDTRANSHALF
 		shieldflag = TakisHUDShieldUsability(p) and V_HUDTRANS or V_HUDTRANSHALF
 		
-		v.drawScaled(hudinfo[HUD_LIVES].x*FU, (hudinfo[HUD_LIVES].y+disp)*FU, (FU/2)+(FU/12), v.cachePatch("TB_C2"), V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_PERPLAYER|shieldflag,v.getColormap(nil, nil))
+		v.drawScaled(hudinfo[HUD_LIVES].x*FU, (hudinfo[HUD_LIVES].y+disp)*FU, (FU/2)+(FU/12), v.cachePatch("TB_C2"), V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_PERPLAYER|shieldflag)
 		v.drawString(hudinfo[HUD_LIVES].x+20, hudinfo[HUD_LIVES].y+(disp+5), "Shield Ability",V_ALLOWLOWERCASE|V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_PERPLAYER|V_HUDTRANS, "small")
+		disp = $-20
+	end
+	
+	if (p.powers[pw_carry] == CR_MINECART)
+		v.drawScaled(hudinfo[HUD_LIVES].x*FU, (hudinfo[HUD_LIVES].y+disp)*FU, (FU/2)+(FU/12), v.cachePatch("TB_C1"), V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_PERPLAYER)
+		v.drawString(hudinfo[HUD_LIVES].x+20, hudinfo[HUD_LIVES].y+(disp+5), "Break Minecart",V_ALLOWLOWERCASE|V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_PERPLAYER|V_HUDTRANS, "small")
 	end
 	
 	//xmom stuff
@@ -785,9 +808,63 @@ end
 
 --      ----------
 
+local function R_GetScreenCoords(v, p, c, mx, my, mz)
+	local camx, camy, camz, camangle, camaiming
+	if p.awayviewtics then
+		camx = p.awayviewmobj.x
+		camy = p.awayviewmobj.y
+		camz = p.awayviewmobj.z
+		camangle = p.awayviewmobj.angle
+		camaiming = p.awayviewaiming
+	elseif c.chase then
+		camx = c.x
+		camy = c.y
+		camz = c.z
+		camangle = c.angle
+		camaiming = c.aiming
+	else
+		camx = p.mo.x
+		camy = p.mo.y
+		camz = p.viewz-20*FRACUNIT
+		camangle = p.mo.angle
+		camaiming = p.aiming
+	end
+
+	-- Lat: I'm actually very lazy so mx can also be a mobj!
+	if type(mx) == "userdata" and mx.valid
+		my = mx.y
+		mz = mx.z
+		mx = mx.x	-- life is easier
+	end
+
+	local x = camangle-R_PointToAngle2(camx, camy, mx, my)
+
+	local distfact = cos(x)
+	if not distfact then
+		distfact = 1
+	end -- MonsterIestyn, your bloody table fixing...
+
+	if x > ANGLE_90 or x < ANGLE_270 then
+		return -9, -9, 0
+	else
+		x = FixedMul(tan(x, true), 160<<FRACBITS)+160<<FRACBITS
+	end
+
+	local y = camz-mz
+	--print(y/FRACUNIT)
+	y = FixedDiv(y, FixedMul(distfact, R_PointToDist2(camx, camy, mx, my)))
+	y = (y*160)+(100<<FRACBITS)
+	y = y+tan(camaiming, true)*160
+
+	local scale = FixedDiv(160*FRACUNIT, FixedMul(distfact, R_PointToDist2(camx, camy, mx, my)))
+	--print(scale)
+
+	return x, y, scale
+end
+
 --CLUTCH----------
 
-local function drawclutches(v,p)
+local function drawclutches(v,p,cam)
 
 	if (customhud.CheckType("takis_clutchstuff") != modname) return end
 	
@@ -799,64 +876,134 @@ local function drawclutches(v,p)
 	local takis = p.takistable
 	local me = p.mo
 	
-	local drawclutchbar = function(v, p, takis)
-
-		local maxammo = 13*23/5
-		local curammo = 13*(23-takis.clutchtime)/5
-		local redarea = 13*(23-11)/5
-		local x = hudinfo[HUD_LIVES].x
-		local y = hudinfo[HUD_LIVES].y+20
-		local barx = x //- maxammo/2
-		local bary = y
-		local patch1 = v.cachePatch("TAKISEG1") //blue
-		local patch3 = v.cachePatch("TAKISEG2") //black
-		local color = SKINCOLOR_GREEN
-		
-		--Ammo bar
-		local pos = 0
-		while (pos < maxammo)
-			local patch = patch3
-			pos = $ + 1
+	if (takis.io.clutchstyle == 0)
+		if takis.clutchtime > 0
+			local maxammo = 13*23/5
+			local barx = hudinfo[HUD_LIVES].x
+			local bary = hudinfo[HUD_LIVES].y+20
+			local color = SKINCOLOR_CRIMSON
+			local pre = "CLTCHBAR_"
 			
-			if pos <= curammo
-				v.draw(barx + pos - 1, bary, patch3, V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_HUDTRANS|V_PERPLAYER)
-				if pos > curammo - 1
-					if (curammo <= 1)
-						//first
-						patch = patch1
-					else
-						//fill
-						patch = patch1
-					end
-				else
-					patch = patch1
-				end
-			end
 			if (takis.clutchtime <= 11)
 			and (takis.clutchtime > 0)
-				color = SKINCOLOR_CRIMSON
+				color = SKINCOLOR_GREEN
 			end
-			v.draw(barx + pos - 1, bary, patch, V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_HUDTRANS|V_PERPLAYER,v.getColormap(nil,color))
+			
+			
+			v.draw(barx, bary, v.cachePatch(pre.."BACK"),
+				V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_HUDTRANS|V_PERPLAYER
+			)
+			
+			local max = 23*FU
+			local timer = (23-takis.clutchtime)*FU
+			local erm = FixedDiv((timer),max)
+			local width = FixedMul(erm,v.cachePatch(pre.."FILL").width*FU)
+			if width < 0 then
+				width = 0
+			end
+			local scale = FU
+			
+			v.drawCropped(barx*FU,bary*FU,scale,scale,
+				v.cachePatch(pre.."FILL"),
+				V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_HUDTRANS|V_PERPLAYER, 
+				v.getColormap(nil,color),
+				0,0,
+				width,v.cachePatch(pre.."FILL").height*FU
+			)
+			
+			v.draw(barx, bary, v.cachePatch(pre.."MARK"),
+				V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_HUDTRANS|V_PERPLAYER
+			)
 		end
-		color = SKINCOLOR_WHITE
-		v.draw(barx + 31 - 1, bary, patch1, V_SNAPTOBOTTOM|V_SNAPTOLEFT|V_HUDTRANS|V_PERPLAYER,v.getColormap(nil,color))
+		//clutch combo
+		if takis.clutchcombo
+			local y = 0
+			if (modeattacking)
+				y = -10
+			end
+			
+			v.drawString(hudinfo[HUD_LIVES].x, hudinfo[HUD_LIVES].y-20+y, takis.clutchcombo.."x BOOSTS",V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_HUDTRANS|V_PERPLAYER|V_ALLOWLOWERCASE)			
+		end
+	elseif (takis.io.clutchstyle == 1)
+		//chrispy chars
+		local player = p
+		local mo = player.mo
+		local color = SKINCOLOR_CRIMSON
+		local pre = "CLTCHMET_"
 		
-	end
-
-	//clutch bar
-	if takis.clutchtime > 0
-		drawclutchbar(v,p,takis)
-	end
-	//clutch combo
-	if takis.clutchcombo
-		local y = 0
-		if (modeattacking)
-			y = -10
+		if (takis.clutchtime <= 11)
+		and (takis.clutchtime > 0)
+			color = SKINCOLOR_GREEN
 		end
 		
-		v.drawString(hudinfo[HUD_LIVES].x, hudinfo[HUD_LIVES].y-20+y, takis.clutchcombo.."x BOOSTS",V_SNAPTOLEFT|V_SNAPTOBOTTOM|V_HUDTRANS|V_PERPLAYER|V_ALLOWLOWERCASE)			
+		local flip = 1
+		local bubble = v.cachePatch(pre.."BACK")
+		local angdiff = ANGLE_90
+		local x, y, scale
+		local cutoff = function(y) return false end
+		
+		if cam.chase and not (player.awayviewtics and not (me.flags2 & MF2_TWOD))
+			x, y, scale = R_GetScreenCoords(v, player, cam, mo)
+			scale = $*2
+			if mo.eflags & MFE_VERTICALFLIP
+			and player.pflags & PF_FLIPCAM
+				y = 200*FRACUNIT - $
+			else
+				flip = P_MobjFlip(mo)
+			end
+		else
+			x, y, scale = 160*FRACUNIT, (100 + bubble.height >> 1)*FRACUNIT, FRACUNIT
+		end
+		
+		if splitscreen
+			if player == secondarydisplayplayer
+				cutoff = function(y) return y < (bubble.height*scale >> 1) end
+			else
+				cutoff = function(y) return y > 200*FRACUNIT + (bubble.height*scale >> 1) end
+			end
+		end
+		
+		local angle = angdiff + ANGLE_90
+		local x = x - P_ReturnThrustX(nil, angle, 50*scale)
+		local y = y - flip*P_ReturnThrustY(nil, angle, 64*scale)
+			
+		if not cutoff(y)
+			if takis.clutchcombo
+				v.drawString(x,y,
+					"x"..takis.clutchcombo,
+					V_PERPLAYER|V_HUDTRANS|V_ALLOWLOWERCASE,
+					"fixed"
+				)
+				v.drawString(x,y+(8*FU),
+					"boosts",
+					V_PERPLAYER|V_HUDTRANS,
+					"thin-fixed"
+				)
+			end
+			if takis.clutchtime > 0
+				v.drawScaled(x, y, scale, bubble, V_PERPLAYER|V_HUDTRANS)
+				
+				local max = 23*FU
+				local timer = (23-takis.clutchtime)*FU
+				local erm = FixedDiv((timer),max)
+				local width = v.cachePatch(pre.."FILL").height*FU-FixedMul(erm,v.cachePatch(pre.."FILL").height*FU)
+				if width < 0 then
+					width = 0
+				end
+				
+				v.drawCropped(x,y+FixedMul(width,scale),scale,scale,
+					v.cachePatch(pre.."FILL"),
+					V_PERPLAYER|V_HUDTRANS, 
+					v.getColormap(nil,color),
+					0,width,
+					v.cachePatch(pre.."FILL").width*FU,v.cachePatch(pre.."FILL").height*FU
+				)
+				
+				v.drawScaled(x, y, scale, v.cachePatch(pre.."MARK"), V_PERPLAYER|V_HUDTRANS)
+			end
+		end
 	end
-
+	
 end
 
 --      ----------
@@ -1267,7 +1414,7 @@ local function hhtimerbase(v,p)
 	end
 	
 	if not (HAPPY_HOUR.othergt)
-		h.xoffset = -GetInternalFontWidth(tostring(string),TAKIS_HAPPYHOURFONT)/7
+		h.xoffset = (-GetInternalFontWidth(tostring(string),TAKIS_HAPPYHOURFONT)-30)/10
 	end
 	
 	if not (takis.inNIGHTSMode)
@@ -2353,7 +2500,7 @@ customhud.SetupItem("takis_bonuses", 		modname/*,	drawlivesarea,	"game",	10*/)
 customhud.SetupItem("takis_crosshair", 		modname/*,	drawlivesarea,	"game",	10*/)
 customhud.SetupItem("takis_happyhourtime", 	modname/*,	drawlivesarea,	"game",	10*/)
 
-addHook("HUD", function(v,p)
+addHook("HUD", function(v,p,cam)
 	if not p
 	or not p.valid
 	or PSO
@@ -2437,7 +2584,7 @@ addHook("HUD", function(v,p)
 			
 			//drawwareffect(v,p)
 			if not (takis.cosmenu.menuinaction)
-				drawclutches(v,p)
+				drawclutches(v,p,cam)
 				drawrings(v,p)
 				drawtimer(v,p)
 				drawlivesarea(v,p)
@@ -2586,14 +2733,9 @@ addHook("HUD", function(v,p)
 		end
 		drawjumpscarelol(v,p)
 		//prtable("steam",takis.HUD.steam)
-		takis.HUD.showingachs = 0
 		for k,va in ipairs(takis.HUD.steam)
 			if va == nil
 				continue
-			end
-			
-			if not paused
-				va.tics = $-1
 			end
 			
 			local enum = va.enum
@@ -2605,18 +2747,8 @@ addHook("HUD", function(v,p)
 				trans = (10-va.tics)<<V_ALPHASHIFT
 			end
 			
-			if takis.HUD.showingachs & enum
-				table.remove(takis.HUD.steam,k)
-				return
-			end
-			
-			takis.HUD.showingachs = $|enum
-			
 			local t = TAKIS_ACHIEVEMENTINFO
 			local x = va.xadd
-			if va.xadd ~= 0
-				va.xadd = $*2/3 //ease.outquad(( FU / et )*(takis.HUD.steam.tics-(3*TR)), 9324919, 0)
-			end
 			
 			v.drawScaled(178*FU+x,172*FU+yadd,FU,
 				v.cachePatch("ACH_BOX"),
@@ -2639,10 +2771,6 @@ addHook("HUD", function(v,p)
 				trans|V_SNAPTORIGHT|V_SNAPTOBOTTOM|V_ALLOWLOWERCASE|V_RETURN8,
 				"small-fixed"
 			)
-			
-			if takis.HUD.steam[k].tics == 0
-				table.remove(takis.HUD.steam,k)
-			end
 			
 		end
 		

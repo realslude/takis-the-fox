@@ -31,6 +31,7 @@ local dbgflags = {
 	"PFLAGS",
 	"BLOCKMAP",
 	"DEATH",
+	"IO",
 }
 for k,v in ipairs(dbgflags)
 	rawset(_G,"DEBUG_"..v,1<<(k-1))
@@ -38,14 +39,13 @@ for k,v in ipairs(dbgflags)
 end
 
 rawset(_G, "DEBUG_print",function(p,...)
-	if not TAKIS_ISDEBUG
-	or leveltime
+	if not (TAKIS_DEBUGFLAG & DEBUG_IO)
 		return
 	end
 	
 	local txt = {...}
 	for k,v in pairs(txt)
-		CONS_Printf(p,"(Called on leveltime tic "..leveltime..") "..tostring(v))
+		print(p.name..": "..v)
 	end
 	
 end)
@@ -86,6 +86,7 @@ rawset(_G, "TAKIS_COMBO_RANKS", {
 	"\x85Property DAMAGE!!",
 	pnk.."Lovely!",
 	"\x83Lookin' Good!",
+	pnk.."Fun-\x81ky!",
 })
 rawset(_G, "TAKIS_COMBO_UP", 5)
 rawset(_G, "TAKIS_HAPPYHOURFONT", "TAHRF")
@@ -151,6 +152,25 @@ rawset(_G, "TAKIS_NET", {
 	playercount = 0,
 	
 	ideyadrones = {},
+	
+	//DONT change to happy hour if the song is any one of these
+	specsongs = {
+		["_1up"] = true,
+		["_shoes"] = true,
+		["_minv"] = true,
+		["_inv"] = true,
+		["_drown"] = true,
+		["_inter"] = true,
+		["_clear"] = true,
+		["_abclr"] = true,
+		["hpyhre"] = true,
+		["hapyhr"] = true,
+		["hpyhr2"] = true,
+		["letter"] = true,
+		["creds"] = true,
+		["_conga"] = true
+	},
+
 })
 rawset(_G, "TAKIS_HAMMERDISP", FixedMul(52*FU,9*FU/10))
 
@@ -251,6 +271,7 @@ rawset(_G, "TakisInitTable", function(p)
 		resettingtoslide = false,
 		//NIGHT SEX PLODE!?!?!?
 		nightsexplode = false,
+		bashtime = 0,
 		
 		taunttime = 0,
 		tauntid = 0,
@@ -275,6 +296,7 @@ rawset(_G, "TakisInitTable", function(p)
 		hammerblasthitbox = nil,
 		hammerblastjumped = 0,
 		hammerblastgroundtime = 0,
+		hammerblastangle = 0,
 		
 		gravflip = 1,
 		
@@ -317,7 +339,7 @@ rawset(_G, "TakisInitTable", function(p)
 			windowstyle = 'win10', //for cosmenu, all lowercase
 			additiveai = 0,
 			ihavemusicwad = 0, //samus-like check for music stuff
-			clutchstyle = 0,
+			clutchstyle = 1, //0 for bar, 1 for meter
 			sharecombos = 1,
 		},
 		//tf2 taunt menu lol
@@ -628,7 +650,7 @@ sfxinfo[sfx_hapyhr].caption = '\x86'.."IT'S HAPPY HOUR!!"..'\x80'
 freeslot("sfx_takdiv")
 sfxinfo[sfx_takdiv].caption = 'Dive'
 freeslot("sfx_airham")
-sfxinfo[sfx_airham].caption = 'Air swing'
+sfxinfo[sfx_airham].caption = 'Swing'
 freeslot("sfx_tawhip")
 sfxinfo[sfx_tawhip].caption = '\x82Johnny Test!\x80'
 freeslot("sfx_takhel")
@@ -758,6 +780,9 @@ sfxinfo[sfx_tcmupa].caption = "\x83".."Combo up!\x80"
 sfxinfo[sfx_tcmupb].caption = "\x83".."Combo up!\x80"
 sfxinfo[sfx_tcmupc].caption = "\x83".."Combo up!\x80"
 
+SafeFreeslot("sfx_shgnbs")
+sfxinfo[sfx_shgnbs].caption = "Shoulder Bash"
+
 --spr_ freeslot
 
 SafeFreeslot("spr_wdrg")
@@ -790,13 +815,38 @@ spr2defaults[SPR2_THUP] = SPR2_STND
 SafeFreeslot("SPR2_TDD2")
 spr2defaults[SPR2_TDD2] = SPR2_TDED
 SafeFreeslot("SPR2_SLID")
-SafeFreeslot("SPR2_TICE")
 //happy hour face
 SafeFreeslot("SPR2_HHF_")
+SafeFreeslot("SPR2_SGBS")
+SafeFreeslot("SPR2_SGST")
+SafeFreeslot("SPR2_CLKB")
 
 --
 
 --state freeslot
+
+freeslot("S_PLAY_TAKIS_SHOULDERBASH")
+states[S_PLAY_TAKIS_SHOULDERBASH] = {
+    sprite = SPR_PLAY,
+    frame = SPR2_SGBS,
+    tics = TR,
+    nextstate = S_PLAY_STND
+}
+freeslot("S_PLAY_TAKIS_SHOTGUNSTOMP")
+states[S_PLAY_TAKIS_SHOTGUNSTOMP] = {
+    sprite = SPR_PLAY,
+    frame = SPR2_SGST,
+    tics = -1,
+    nextstate = S_PLAY_STND
+}
+freeslot("S_PLAY_TAKIS_KILLBASH")
+states[S_PLAY_TAKIS_KILLBASH] = {
+    sprite = SPR_PLAY,
+    frame = SPR2_CLKB,
+    tics = TR/3,
+    nextstate = S_PLAY_FALL
+}
+
 
 freeslot("S_PLAY_TAKIS_SMUGASSGRIN")
 states[S_PLAY_TAKIS_SMUGASSGRIN] = {
@@ -1108,6 +1158,10 @@ mobjinfo[MT_TAKIS_SHOTGUN_HITBOX] = {
 addHook("NetVars",function(n)
 	TAKIS_NET = n($)
 	TAKIS_MAX_HEARTCARDS = n($)
+	TAKIS_DEBUGFLAG = n($)
+	HAPPY_HOUR = n($)
+	TAKIS_ACHIEVEMENTINFO = n($)
+	SPIKE_LIST = n($)
 end)
 
 filesdone = $+1

@@ -458,7 +458,35 @@ rawset(_G, "TakisHUDStuff", function(p)
 			hud.combo.shake = 0
 		end
 	end
-	
+
+	takis.HUD.showingachs = 0
+	for k,va in ipairs(takis.HUD.steam)
+		if va == nil
+			continue
+		end
+		
+		local enum = va.enum
+		
+		if takis.HUD.showingachs & enum
+			table.remove(takis.HUD.steam,k)
+			return
+		end
+		
+		takis.HUD.showingachs = $|enum
+		
+		local t = TAKIS_ACHIEVEMENTINFO
+		local x = va.xadd
+		if va.xadd ~= 0
+			va.xadd = $*2/3 //ease.outquad(( FU / et )*(takis.HUD.steam.tics-(3*TR)), 9324919, 0)
+		end
+		va.tics = $-1
+				
+		if takis.HUD.steam[k].tics == 0
+			table.remove(takis.HUD.steam,k)
+		end
+		
+	end
+
 end)
 
 rawset(_G, "TakisDoShorts", function(p,me,takis)
@@ -672,8 +700,10 @@ rawset(_G, "TakisDoShorts", function(p,me,takis)
 		end
 		p.powers[pw_strong] = $ &~(STR_PUNCH|STR_STOMP|STR_UPPER)
 	end
-
-	takis.accspeed = lastspeed
+	
+	if p.powers[pw_carry] ~= CR_NIGHTSMODE
+		takis.accspeed = lastspeed
+	end
 	
 	if takis.yeahed
 	and me.health
@@ -984,24 +1014,7 @@ rawset(_G, "TakisDoShorts", function(p,me,takis)
 			
 			//in range!
 			if FixedHypot(dx,dy) <= TAKIS_TAUNT_DIST
-			and (not takis.taunttime)
-				if (skins["milne"])
-					if ((m2) and (m2.state == S_MILNE_KICK)
-					and (p2.milnekick))
-						
-						//this is stupid,,,, :/
-						local tics = 6
-						if ((takis.tauntjoin) and (takis.tauntjoin.valid))
-						and not (takis.accspeed or me.momz)
-						and me.health
-							takis.tauntjoin.tics = tics
-						else
-							takis.tauntjoin = P_SpawnMobjFromMobj(me, 0, 0, me.height*2, MT_TAKIS_TAUNT_JOIN)
-							takis.tauntjoin.target = me
-						end
-					end
-				end
-				
+			and (not takis.taunttime)				
 				if p2.takistable.tauntjoinable
 					//this is stupid,,,, :/
 					local tics = 6
@@ -1118,6 +1131,11 @@ rawset(_G, "TakisDoShorts", function(p,me,takis)
 	
 	if takis.inSRBZ
 		takis.noability = NOABIL_SPIN|NOABIL_DIVE
+	end
+	
+	if (takis.afterimaging
+	and takis.shotgunned)
+		takis.afterimaging = false
 	end
 	
 	p.alreadyhascombometer = 2
@@ -1479,7 +1497,10 @@ rawset(_G, "TakisHUDShieldUsability", function(player)
 		return false
 	end
 	
-	//if player.pflags & PF_JUMPED
+	if (takis.shotgunned)
+		return false
+	end
+	
 	if (f or player.powers[pw_super])
 	and not (player.mo.state >= 59 and player.mo.state <= 64)
 		local t = takis.attracttarg
@@ -1489,7 +1510,7 @@ rawset(_G, "TakisHUDShieldUsability", function(player)
 		end
 		if f == SH_WHIRLWIND
 		or f == SH_THUNDERCOIN
-			if not (p.pflags & PF_THOKKED|PF_SHIELDABILITY)
+			if not (p.pflags & (PF_THOKKED|PF_SHIELDABILITY))
 				return true
 			end
 			return false
@@ -1740,6 +1761,7 @@ rawset(_G, "TakisGiveCombo",function(p,takis,add,max,remove,shared)
 	if (p.powers[pw_carry] == CR_NIGHTSMODE)
 	or not (gametyperules & GTR_FRIENDLY)
 	or (maptol & TOL_NIGHTS)
+	or (TAKIS_NET.inspecialstage)
 		return
 	end
 	if add == nil
@@ -1796,6 +1818,17 @@ rawset(_G, "TakisGiveCombo",function(p,takis,add,max,remove,shared)
 				if (not p2.mo.health) or (p2.playerstate ~= PST_LIVE) then continue end
 				if (p2.mo.skin ~= TAKIS_SKIN) then continue end
 				if (p2.takistable.io.sharecombos == 0) then continue end
+				
+				//forgot radius
+				if not P_CheckSight(p.mo,p2.mo) then continue end
+				local dx = p2.mo.x-p.mo.x
+				local dy = p2.mo.y-p.mo.y
+				local dz = p2.mo.z-p.mo.z
+				local dist = TAKIS_TAUNT_DIST*5
+				
+				if FixedHypot(FixedHypot(dx,dy),dz) > dist
+					continue
+				end
 				
 				TakisGiveCombo(p2,p2.takistable,true,nil,nil,true)
 				
@@ -2377,43 +2410,19 @@ rawset(_G,"TakisPowerfulArma",function(p)
 	local px = me.x
 	local py = me.y
 	local br = rad
-	local h = 20
 	
-	for i = 0,10
-		local f1 = P_SpawnMobj(px-br,py-br,me.z+((h*FU)*i),MT_THOK)
-		f1.tics = -1
-		f1.fuse = TR
-		f1.sprite = SPR_RING
-	end
-	for i = 0,10
-		local f2 = P_SpawnMobj(px-br,py+br,me.z+((h*FU)*i),MT_THOK)
-		f2.tics = -1
-		f2.fuse = TR
-		f2.sprite = SPR_RING
-	end
-	for i = 0,10
-		local f3 = P_SpawnMobj(px+br,py-br,me.z+((h*FU)*i),MT_THOK)
-		f3.tics = -1
-		f3.fuse = TR
-		f3.sprite = SPR_RING
-	end
-	for i = 0,10
-		local f4 = P_SpawnMobj(px+br,py+br,me.z+((h*FU)*i),MT_THOK)
-		f4.tics = -1
-		f4.fuse = TR
-		f4.sprite = SPR_RING
-	end
 	searchBlockmap("objects", function(me, found)
 		if found and found.valid
 		and (found.health)
-			if ((found.type == MT_SPIKE) or
-			(found.type == MT_WALLSPIKE) or
-			(found.type == MT_SPIKEBALL) or
-			(found.type == MT_BOMBSPHERE))
-				P_KillMobj(found,me,me)
-			elseif found.flags & (MF_ENEMY|MF_BOSS)
-			or found.takis_flingme
-				P_KillMobj(found,me,me)
+			if (found.type ~= MT_EGGMAN_BOX)
+			or (found.takis_flingme == nil or found.takis_flingme ~= false)
+				if SPIKE_LIST[found.type] == true
+					P_KillMobj(found,me,me)
+				elseif found.flags & (MF_ENEMY|MF_BOSS)
+				or found.takis_flingme
+					P_KillMobj(found,me,me)
+				end
+				
 			end
 		end
 	end, me, px-br, px+br, py-br, py+br)			
@@ -2906,6 +2915,7 @@ rawset(_G, "TakisShotgunify", function(p)
 		takis.shotgun.target = me
 		takis.shotgun.angle = p.drawangle
 	end
+	TakisResetHammerTime(p)
 end)
 
 rawset(_G, "TakisDeShotgunify", function(p)
@@ -2920,7 +2930,13 @@ rawset(_G, "TakisDeShotgunify", function(p)
 	if S_MusicName() == ReturnTakisMusic("war",p)
 		P_RestoreMusic(p)
 	end
+	TakisResetHammerTime(p)
+end)
 
+rawset(_G,"SpawnBam",function(mo)
+	local bam = P_SpawnMobjFromMobj(mo,0,0,0,MT_TNTDUST)
+	bam.state = mobjinfo[MT_MINECART].deathstate 
+	return bam
 end)
 
 filesdone = $+1
