@@ -46,11 +46,6 @@ local function init_bat(p)
 		S_StartSound(nil,sfx_adderr,p)
 		return false
 	end
-	if not (TAKIS_NET.loudtauntsenabled)
-		CONS_Printf(p,"You cannot use this taunt as the server has loud taunts disabled.")
-		S_StartSound(nil,sfx_adderr,p)
-		return false
-	end
 	
 	takis.taunttime = 3*TR
 	S_StartSound(me,sfx_spndsh)

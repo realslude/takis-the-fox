@@ -1129,6 +1129,10 @@ rawset(_G, "TakisDoShorts", function(p,me,takis)
 		P_KillMobj(me)
 	end
 	
+	if (takis.heartcards > TAKIS_MAX_HEARTCARDS)
+		takis.heartcards = TAKIS_MAX_HEARTCARDS
+	end
+	
 	if takis.inSRBZ
 		takis.noability = NOABIL_SPIN|NOABIL_DIVE
 	end
@@ -1560,8 +1564,8 @@ rawset(_G, "TakisHealPlayer", function(p,me,takis,healtype,healamt)
 			return
 		end
 		takis.heartcards = TAKIS_MAX_HEARTCARDS
-		takis.heartcardpieces = 0
 		takis.HUD.heartcards.add = 5*FU
+		takis.HUD.statusface.happyfacetic = 2*TR
 		p.timeshit = 0
 	elseif healtype == 1
 		if takis.heartcards == TAKIS_MAX_HEARTCARDS
@@ -1569,9 +1573,7 @@ rawset(_G, "TakisHealPlayer", function(p,me,takis,healtype,healamt)
 		end
 		takis.heartcards = $+healamt
 		takis.HUD.heartcards.add = (healamt*FU)*3/2
-		if takis.heartcards >= TAKIS_MAX_HEARTCARDS
-			takis.heartcardpieces = 0
-		end
+		takis.HUD.statusface.happyfacetic = 2*TR
 		if p.timeshit
 			p.timeshit = $-1
 		end
@@ -1580,23 +1582,37 @@ rawset(_G, "TakisHealPlayer", function(p,me,takis,healtype,healamt)
 		return
 	end
 	
-	S_StartSound(me,sfx_takhel,p)
-	for i = 0, 8
-		local mt = MT_THOK
-		local fa = (i*ANGLE_45)
-		local dust = P_SpawnMobjFromMobj(me,-20*cos(fa),-20*sin(fa),((me.scale)*i)*takis.gravflip,mt)
-		dust.state = S_LHRT
-		dust.frame = A|TR_TRANS10
-		dust.blendmode = AST_ADD
+	//S_StartSound(me,sfx_takhel,p)
+	local maxturn = P_RandomRange(12,18)
+	for i = 0,maxturn
+		local radius = 35
+		local turn = FixedDiv(360*FU,maxturn*FU)
+		local fa = FixedAngle(i*turn)
+		fa = $+FixedAngle(P_RandomRange(-4,4)*FU)
+		local x,y = ReturnTrigAngles(fa)
+		local heart = P_SpawnMobjFromMobj(me,
+			radius*x,
+			radius*y,
+			me.height/2*P_MobjFlip(me),
+			MT_THOK
+		)
+		heart.state = S_LHRT
+		heart.frame = A|TR_TRANS10
+		heart.blendmode = AST_ADD
+		heart.tics = -1
+		heart.angle = R_PointToAngle2(me.x,me.y,heart.x,heart.y)
+		heart.fuse = TR*3
+		heart.flags = $ &~MF_NOGRAVITY
+		local ran = P_RandomRange(2,5)*FU+P_RandomFixed()		
+		P_SetObjectMomZ(heart,FixedMul(ran,me.scale*2))
 		
-		dust.angle = me.angle
-		dust.momz = (me.scale*takis.gravflip)*(8-i)
+		ran = P_RandomRange(2,5)*FU+P_RandomFixed()		
+		P_Thrust(heart,heart.angle,FixedMul(ran,me.scale))
 		
-		dust.destscale = dust.scale/2
-		dust.fuse = 14
-		
-		
+		heart.scalespeed = FU/heart.fuse
+		heart.destscale = $/5+FixedMul(P_RandomRange(FU/10,FU-2),me.scale)
 	end
+		
 end)
 
 local function lookforenemy(me,prevangle)
@@ -2176,53 +2192,6 @@ rawset(_G,"TakisDrawBonuses", function(v, p, x, y, flags, salign, dist, angle)
 		end
 		
 	end
-	for k,val in ipairs(bonus.cardpieces)
-		if val.tics
-			local trans = 0
-			if val.tics > TR+9
-				trans = (val.tics-(TR+9))<<V_ALPHASHIFT
-			elseif val.tics < 10
-				trans = (10-val.tics)<<V_ALPHASHIFT
-			end
-			
-			v.drawString(x+lerpx, y+lerpy, 
-				"+"..val.score.." - "..val.text, 
-				flags|trans, salign
-			)
-			
-			val.tics = $-1
-			DoShift(lerp["HEARTPIECE"], angle)
-			DoLerp("HEARTPIECE", false, dist)
-		else
-			DoShift(lerp["HEARTPIECE"], angle)
-			DoLerp("HEARTPIECE", true, dist)
-			table.remove(bonus.cardpieces,k)
-		end
-		
-	end
-	
-	/*
-	if bonus["heartcardpiece"].tics
-		local trans = 0
-		if bonus["heartcardpiece"].tics > TR+9
-			trans = (bonus["heartcardpiece"].tics-(TR+9))<<V_ALPHASHIFT
-		elseif bonus["heartcardpiece"].tics < 10
-			trans = (10-bonus["heartcardpiece"].tics)<<V_ALPHASHIFT
-		end
-		
-		v.drawString(x+lerpx, y+lerpy, 
-			"+"..bonus["heartcardpiece"].score.." - "..bonus["heartcardpiece"].text, 
-			flags|trans, salign
-		)
-		
-		bonus["heartcardpiece"].tics = $-1
-		DoShift(lerp["HEARTPIECE"], angle)
-		DoLerp("HEARTPIECE", false, dist)
-	else
-		DoShift(lerp["HEARTPIECE"], angle)
-		DoLerp("HEARTPIECE", true, dist)
-	end
-	*/
 	
 end)
 
@@ -2376,87 +2345,91 @@ rawset(_G,"TakisPowerfulArma",function(p)
 	local takis = p.takistable
 	local rad = 8000*FU
 	
-	S_StartSound(me, sfx_bkpoof)
-	DoFlash(p,PAL_NUKE,20)
-	DoQuake(p,75*FU,20)
-	
-	for p2 in players.iterate
-		if p2 == p
-			continue
-		end
+	if not (TAKIS_NET.nerfarma)
+		S_StartSound(me, sfx_bkpoof)
+		DoFlash(p,PAL_NUKE,20)
+		DoQuake(p,75*FU,20)
 		
-		local m2 = p2.realmo
-		
-		if not m2 or not m2.valid
-			continue
-		end
-		
-		if (FixedHypot(m2.x-me.x,m2.y-me.y) <= rad)
-			if (CanPlayerHurtPlayer(p,p2))
-				TakisAddHurtMsg(p2,HURTMSG_ARMA)
-				P_DamageMobj(m2,me,me)
+		for p2 in players.iterate
+			if p2 == p
+				continue
 			end
-			DoFlash(p2,PAL_NUKE,20)
-			DoQuake(p2,
-				FixedMul(
-					75*FU, FixedDiv( rad-FixedHypot(m2.x-me.x,m2.y-me.y),rad )
-				),
-				20
-			)
-		end
-	end
-	
-	//kill!
-	local px = me.x
-	local py = me.y
-	local br = rad
-	
-	searchBlockmap("objects", function(me, found)
-		if found and found.valid
-		and (found.health)
-			if (found.type ~= MT_EGGMAN_BOX)
-			or (found.takis_flingme == nil or found.takis_flingme ~= false)
-				if SPIKE_LIST[found.type] == true
-					P_KillMobj(found,me,me)
-				elseif found.flags & (MF_ENEMY|MF_BOSS)
-				or found.takis_flingme
-					P_KillMobj(found,me,me)
+			
+			local m2 = p2.realmo
+			
+			if not m2 or not m2.valid
+				continue
+			end
+			
+			if (FixedHypot(m2.x-me.x,m2.y-me.y) <= rad)
+				if (CanPlayerHurtPlayer(p,p2))
+					TakisAddHurtMsg(p2,HURTMSG_ARMA)
+					P_DamageMobj(m2,me,me)
 				end
-				
+				DoFlash(p2,PAL_NUKE,20)
+				DoQuake(p2,
+					FixedMul(
+						75*FU, FixedDiv( rad-FixedHypot(m2.x-me.x,m2.y-me.y),rad )
+					),
+					20
+				)
 			end
 		end
-	end, me, px-br, px+br, py-br, py+br)			
-	
-	me = p.mo
-	
-	//sparks
-	for i = 1, 40 do
-		local fa = (i*FixedAngle(9*FU))
-		local x = FixedMul(cos(fa), 22*(me.scale/FU))*FU
-		local y = FixedMul(sin(fa), 22*(me.scale/FU))*FU
-		local height = me.height
-		local spark = P_SpawnMobjFromMobj(me,x,y,(height/2)*takis.gravflip,MT_SOAP_SUPERTAUNT_FLYINGBOLT)
-		spark.tracer = me
-		spark.state = P_RandomRange(S_SOAP_SUPERTAUNT_FLYINGBOLT1,S_SOAP_SUPERTAUNT_FLYINGBOLT5)
-		spark.color = p.skincolor
-		spark.momx, spark.momy = x,y
-		spark.blendmode = AST_ADD
-		spark.angle = fa	
-	end
-	for i = 0, 16
-		local fa = (i*ANGLE_22h)
-		local spark = P_SpawnMobjFromMobj(me,0,0,0,MT_SUPERSPARK)
-		spark.momx = FixedMul(sin(fa),rad)
-		spark.momy = FixedMul(cos(fa),rad)
-		local spark2 = P_SpawnMobjFromMobj(me,0,0,0,MT_SUPERSPARK)
-		spark2.color = me.color
-		spark2.momx = FixedMul(sin(fa),rad/20)
-		spark2.momy = FixedMul(cos(fa),rad/20)
+		
+		//kill!
+		local px = me.x
+		local py = me.y
+		local br = rad
+		
+		searchBlockmap("objects", function(me, found)
+			if found and found.valid
+			and (found.health)
+				if (found.type ~= MT_EGGMAN_BOX)
+				or (found.takis_flingme == nil or found.takis_flingme ~= false)
+					if SPIKE_LIST[found.type] == true
+						P_KillMobj(found,me,me)
+					elseif found.flags & (MF_ENEMY|MF_BOSS)
+					or found.takis_flingme
+						P_KillMobj(found,me,me)
+					end
+					
+				end
+			end
+		end, me, px-br, px+br, py-br, py+br)			
+		
+		me = p.mo
+		
+		//sparks
+		for i = 1, 40 do
+			local fa = (i*FixedAngle(9*FU))
+			local x = FixedMul(cos(fa), 22*(me.scale/FU))*FU
+			local y = FixedMul(sin(fa), 22*(me.scale/FU))*FU
+			local height = me.height
+			local spark = P_SpawnMobjFromMobj(me,x,y,(height/2)*takis.gravflip,MT_SOAP_SUPERTAUNT_FLYINGBOLT)
+			spark.tracer = me
+			spark.state = P_RandomRange(S_SOAP_SUPERTAUNT_FLYINGBOLT1,S_SOAP_SUPERTAUNT_FLYINGBOLT5)
+			spark.color = p.skincolor
+			spark.momx, spark.momy = x,y
+			spark.blendmode = AST_ADD
+			spark.angle = fa	
+		end
+		for i = 0, 16
+			local fa = (i*ANGLE_22h)
+			local spark = P_SpawnMobjFromMobj(me,0,0,0,MT_SUPERSPARK)
+			spark.momx = FixedMul(sin(fa),rad)
+			spark.momy = FixedMul(cos(fa),rad)
+			local spark2 = P_SpawnMobjFromMobj(me,0,0,0,MT_SUPERSPARK)
+			spark2.color = me.color
+			spark2.momx = FixedMul(sin(fa),rad/20)
+			spark2.momy = FixedMul(cos(fa),rad/20)
+		end
+		p.powers[pw_shield] = SH_NONE
+	else
+		P_BlackOw(p)
 	end
 	
 	//get an extra combo from the shield
 	TakisGiveCombo(p,takis,true)
-	p.powers[pw_shield] = SH_NONE
 end)
 
 rawset(_G,"TakisResetTauntStuff",function(takis,killclapper)
@@ -2699,12 +2672,14 @@ rawset(_G,"TakisMenuThinker",function(p)
 	
 	if menu.page == 1
 		if menu.up == 1
+		or menu.up >= TR/2
 			if menu.achscroll ~= 0
 				menu.achscroll = $-1
 				S_StartSound(nil,sfx_menu1,p)
 			end
 		end
 		if menu.down == 1
+		or menu.down >= TR/2
 			if menu.achscroll ~= NUMACHIEVEMENTS-5
 				menu.achscroll = $+1
 				S_StartSound(nil,sfx_menu1,p)
@@ -2714,12 +2689,14 @@ rawset(_G,"TakisMenuThinker",function(p)
 	end
 	
 	if menu.up == 1
+	or menu.up >= TR/2
 		if menu.y ~= 0
 			menu.y = $-1
 			S_StartSound(nil,sfx_menu1,p)
 		end
 	end
 	if menu.down == 1
+	or menu.down >= TR/2
 		if menu.y ~= #TAKIS_MENU.entries[menu.page].text-1
 			menu.y = $+1
 			S_StartSound(nil,sfx_menu1,p)
@@ -2927,7 +2904,7 @@ rawset(_G, "TakisDeShotgunify", function(p)
 	end
 	takis.shotgun = 0
 	takis.shotgunned = false
-	if S_MusicName() == ReturnTakisMusic("war",p)
+	if string.lower(S_MusicName()) == ReturnTakisMusic("war",p)
 		P_RestoreMusic(p)
 	end
 	TakisResetHammerTime(p)

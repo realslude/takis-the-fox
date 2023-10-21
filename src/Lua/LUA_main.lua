@@ -239,8 +239,30 @@ addHook("PlayerThink", function(p)
 			if (takis.bashtime)
 				takis.bashtime = $-1
 				takis.noability = $|NOABIL_SLIDE|NOABIL_SHOTGUN
-				if (me.state ~= S_PLAY_TAKIS_SHOULDERBASH)
+				local doswitch = true
+				if (me.state == S_PLAY_JUMP)
+					me.state = S_PLAY_TAKIS_SHOULDERBASH_JUMP
+					doswitch = false
+				end
+				
+				if (me.state == S_PLAY_TAKIS_SHOULDERBASH)
+					if (me.tics > takis.bashtics)
+					and (me.tics ~= takis.bashtics)
+					and (takis.bashtics >= 4)
+						me.tics = takis.bashtics-4
+					end
+					takis.bashtics = me.tics
+				end
+				
+				
+				local instates = (me.state == S_PLAY_TAKIS_SHOULDERBASH) or (me.state == S_PLAY_TAKIS_SHOULDERBASH_JUMP)
+				if not instates
+				and doswitch
 					takis.bashtime = 0
+				end
+			else
+				if takis.bashtics ~= 0
+					takis.bashtics = 0
 				end
 			end
 	
@@ -503,7 +525,8 @@ addHook("PlayerThink", function(p)
 					if (takis.use == 1)
 					and not (takis.shotguncooldown)
 					and not (takis.inPain or takis.inFakePain)
-					and not (takis.noability & NOABIL_SHOTGUN)
+					and not (takis.noability & NOABIL_SHOTGUN
+					or p.pflags & PF_SPINNING)
 						P_Thrust(me,p.drawangle,-10*me.scale)
 						P_MovePlayer(p)
 						
@@ -581,6 +604,7 @@ addHook("PlayerThink", function(p)
 					//shoulder bash
 					if takis.c1 == 1
 					and not takis.bashtime
+					and not (takis.inPain or takis.inFakePain)
 					and not (takis.noability & NOABIL_SHOTGUN)
 						local ang = (p.cmd.angleturn << 16) + R_PointToAngle2(0, 0, p.cmd.forwardmove << 16, -p.cmd.sidemove << 16)
 						p.drawangle = ang
@@ -956,6 +980,8 @@ addHook("PlayerThink", function(p)
 			//stuff to do while in pain
 			if takis.inPain
 			or takis.inFakePain
+				takis.noability = $|NOABIL_SHOTGUN
+				
 				TakisResetTauntStuff(takis)
 			
 				takis.hammerblastjumped = 0
@@ -1014,6 +1040,7 @@ addHook("PlayerThink", function(p)
 			if takis.hammerblastdown
 				p.charflags = $ &~SF_RUNONWATER
 				p.powers[pw_strong] = $|(STR_SPRING|STR_HEAVY)
+				takis.noability = $|NOABIL_SHOTGUN|NOABIL_HAMMER
 				
 				if (takis.shotgunned)
 					if me.state ~= S_PLAY_TAKIS_SHOTGUNSTOMP
@@ -1214,6 +1241,7 @@ addHook("PlayerThink", function(p)
 								if found and found.valid
 								and (found.health)
 									if (found.type ~= MT_EGGMAN_BOX)
+									or (found.takis_flingme ~= false)
 										if (found.flags & (MF_ENEMY|MF_BOSS))
 										or (found.flags & MF_MONITOR)
 										or (found.takis_flingme)
@@ -1445,6 +1473,7 @@ addHook("PlayerThink", function(p)
 					//AGAIN !!
 					P_ButteredSlope(me)
 					takis.clutchingtime = $-2
+					takis.noability = $|NOABIL_SHOTGUN
 				end
 				takis.dived = false
 				if takis.hammerblastjumped >= 3
@@ -1635,13 +1664,6 @@ addHook("PlayerThink", function(p)
 				takis.stoprolling = false
 			end
 			
-			//heal cards
-			if takis.heartcardpieces >= 7
-				TakisHealPlayer(p,me,takis,1)
-				S_StartSound(nil, sfx_takhel, p)
-				takis.heartcardpieces = 0
-			end
-			
 			//handle combo stuff here
 			if takis.combo.time ~= 0
 				if not (takis.notCarried)
@@ -1744,8 +1766,7 @@ addHook("PlayerThink", function(p)
 					//time for bonuses!
 					if takis.fakeexiting == 1
 						
-						if ((takis.heartcards == 1)
-						and (takis.heartcardpieces == 0))
+						if (takis.heartcards == 1)
 						and (p.timeshit >= 3)
 						and (p.playerstate == PST_LIVE)
 							TakisAwardAchievement(p,ACHIEVEMENT_HARDCORE)
@@ -1776,12 +1797,12 @@ addHook("PlayerThink", function(p)
 					end
 					
 					if (p.exiting ~= 1)
-						if (takis.heartcards or takis.heartcardpieces)
+						if (takis.heartcards)
 							local tic = 77/TAKIS_MAX_HEARTCARDS
 							tic = $ or 1
 							
 							if not (takis.fakeexiting % tic)
-							
+								
 								if takis.heartcards
 									takis.heartcards = $-1
 									S_StartSound(nil,sfx_takhel,p)
@@ -1790,14 +1811,6 @@ addHook("PlayerThink", function(p)
 									//takis.bonuses["heartcard"].tics = TR+18
 									//takis.bonuses["heartcard"].score = 1000
 									takis.HUD.flyingscore.scorenum = $+1000
-								elseif takis.heartcardpieces
-									takis.heartcardpieces = $-1
-									S_StartSound(nil,sfx_itemup,p)
-									P_AddPlayerScore(p,1000/7)
-									table.insert(takis.bonuses.cardpieces,{tics = TR+18,score = 1000/7,text = "\x8EHeart Card Piece"})
-									//takis.bonuses["heartcardpiece"].tics = TR+18
-									//takis.bonuses["heartcardpiece"].score = 1000/7
-									takis.HUD.flyingscore.scorenum = $+250
 								end
 								
 							end
@@ -1809,11 +1822,6 @@ addHook("PlayerThink", function(p)
 							P_AddPlayerScore(p,1000*takis.heartcards)
 							takis.heartcards = 0
 							takis.HUD.flyingscore.scorenum = $+1000*takis.heartcards
-						elseif takis.heartcardpieces
-							S_StartSound(nil,sfx_itemup,p)
-							P_AddPlayerScore(p,250*takis.heartcardpieces)
-							takis.HUD.flyingscore.scorenum = $+250*takis.heartcardpieces
-							takis.heartcardpieces = 0
 						end
 						TakisSaveStuff(p)
 					end
@@ -2072,15 +2080,23 @@ end)
 addHook("PlayerSpawn", function(p)
 	local x,y = ReturnTrigAngles(p.mo.angle)
 	if not multiplayer
+	and (TAKIS_DEBUGFLAG & DEBUG_HAPPYHOUR)
 		P_SpawnMobjFromMobj(p.mo,100*x,100*y,0,MT_HHTRIGGER)
 	end
 	
-	if (maptol & TOL_NIGHTS)
-		p.jumpfactor = FixedMul(skins[TAKIS_SKIN].jumpfactor,6*FU/10)
-	else
-		if (p.jumpfactor < skins[TAKIS_SKIN].jumpfactor)
-			p.jumpfactor = skins[TAKIS_SKIN].jumpfactor
+	if (skins[p.skin] == TAKIS_SKIN)
+		if (maptol & TOL_NIGHTS)
+			p.jumpfactor = FixedMul(skins[TAKIS_SKIN].jumpfactor,6*FU/10)
+		else
+			if (p.jumpfactor < skins[TAKIS_SKIN].jumpfactor)
+				p.jumpfactor = skins[TAKIS_SKIN].jumpfactor
+			end
 		end
+	else
+		if (p.jumpfactor < skins[p.skin].jumpfactor)
+			p.jumpfactor = skins[p.skin].jumpfactor
+		end
+	
 	end
 	
 	if p.takistable
@@ -2091,7 +2107,6 @@ addHook("PlayerSpawn", function(p)
 		TakisDeShotgunify(p)
 		
 		takis.heartcards = TAKIS_MAX_HEARTCARDS
-		takis.heartcardpieces = 0
 		
 		takis.taunttime = 0
 		takis.tauntid = 0
@@ -2136,6 +2151,7 @@ addHook("PlayerSpawn", function(p)
 		
 		if gamemap ~= takis.lastmap
 		or gamemap ~= takis.lastgt
+		or (leveltime < 3)
 			takis.combo.dropped = false
 			takis.combo.awardable = false
 		end
@@ -2413,6 +2429,7 @@ local function stopmom(takis,me,ang)
 	and HAPPY_HOUR.happyhour)
 		me.momx,me.momy = 0,0
 		me.state = S_PLAY_TAKIS_KILLBASH
+		TakisResetHammerTime(me.player)
 		P_SetObjectMomZ(me,6*me.scale)
 		P_Thrust(me,ang,-6*me.scale)
 	end
@@ -2865,13 +2882,7 @@ local function givecardpieces(mo, _, source)
 	and source.skin == TAKIS_SKIN
 	and source.player
 	and source.player.valid
-		if source.player.takistable.heartcards ~= TAKIS_MAX_HEARTCARDS
-		and mo.takis_givecardpieces
-		and not (maptol & TOL_NIGHTS)
-			source.player.takistable.heartcardpieces = $+1
-		
-		end
-		
+	
 		if source.player.takistable.combo.time
 		and mo.takis_givecombotime
 			TakisGiveCombo(source.player,source.player.takistable,false)
@@ -2893,9 +2904,20 @@ addHook("MobjDeath", givecardpieces)
 //thing died by takis
 local function hurtbytakis(mo,inf,sor)
 	
+	if not mo.health
+	and (mo.takis_flingme ~= false)
+		if (mo.flags & MF_ENEMY)
+		or (mo.takis_flingme == true)
+			if P_RandomChance(FU/2)
+				local card = P_SpawnMobjFromMobj(mo,0,0,mo.height*P_MobjFlip(mo),MT_TAKIS_HEARTCARD)
+				P_SetObjectMomZ(card,10*mo.scale)
+			end
+		end
+	end
+	
 	if not sor
 	or not sor.valid
-		//did something die outta no where?
+		//did something die outta nowhere?
 		if not mo.health
 		and (((mo.flags & MF_ENEMY) or (mo.flags & MF_BOSS))
 		or ( mo.flags & MF_MONITOR)
@@ -2938,13 +2960,6 @@ local function hurtbytakis(mo,inf,sor)
 	
 	if mo.flags & MF_MONITOR
 		if mo.type ~= MT_EGGMAN_BOX
-			if mo.type == MT_1UP_BOX
-			or mo.type == MT_SCORE10K_BOX
-				TakisHealPlayer(sor.player,sor,sor.player.takistable,2)
-			end
-			if mo.type == MT_RING_BOX
-				TakisHealPlayer(sor.player,sor,sor.player.takistable,1)
-			end
 			TakisGiveCombo(sor.player,sor.player.takistable,true)
 			sor.player.takistable.HUD.statusface.happyfacetic = 3*TR/2
 			if mo.partofdestoys
@@ -3052,14 +3067,14 @@ addHook("MobjDeath", function(mo,_,_,dmgt)
 	
 end,MT_PLAYER)
 addHook("AbilitySpecial", function(p)
+	if p.mo.skin ~= TAKIS_SKIN then return end
+	
 	if p.takistable.thokked
 		return true
 	end
 	if ((p.takistable.inPain) or (p.takistable.inFakePain))
 		return true
 	end
-	
-	if p.mo.skin ~= TAKIS_SKIN then return end
 	
 	local me = p.mo
 	local takis = p.takistable
@@ -3179,18 +3194,13 @@ addHook("MobjMoveCollide",function(tm,t)
 				P_KillMobj(t,tm,tm)
 				return false
 			end
-		//fuck these shields in particular
-		elseif (t.type == MT_EGGSHIELD)
-			local gaurd = t.target
-			gaurd.flags = $|MF_ENEMY
-			P_KillMobj(t,tm,tm)
-			P_KillMobj(guard,tm,tm)
 		//TODO: fling solids
 		elseif (t.flags & MF_SOLID|MF_SCENERY == MF_SOLID|MF_SCENERY)
 		and not (t.flags & (MF_SPECIAL|MF_ENEMY|MF_MONITOR|MF_PUSHABLE))
 		and (t.health)
 		and (takis.afterimaging)
 		and (t.parent ~= tm)
+		and (t.type ~= MT_PLAYER)
 			P_RemoveMobj(t)
 			TakisGiveCombo(p,takis,true)
 			CONS_Printf(p,"Destroyed solid. TODO: this!")

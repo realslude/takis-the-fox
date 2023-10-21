@@ -23,14 +23,12 @@ tm.entries = {
 		title = "Achievements",
 		color = SKINCOLOR_CARBON,
 		nocursor = true,
-		icon = "MISSING",
 		text = {},
 	},
 	[2] = {
 		title = "Takis Options",
 		color = SKINCOLOR_CLOUDY,
 		curcolor = SKINCOLOR_SUPERGOLD4,
-		icon = "MISSING",
 		text = {
 			"No Strafe",
 			"No Happy Hour",
@@ -41,6 +39,9 @@ tm.entries = {
 			"Flashes",
 			"Additive Afterimages",
 			"I have the Music Wad!",
+			"Clutch Meter Style",
+			"Share Combos",
+			"Don't Show Ach. Messages",
 		},
 		table = "takis.io",
 		values = {
@@ -53,6 +54,9 @@ tm.entries = {
 			"flashes",
 			"additiveai",
 			"ihavemusicwad",
+			"clutchstyle",
+			"sharecombos",
+			"dontshowach"
 		},
 		commands = {
 			"nostrafe",
@@ -64,13 +68,15 @@ tm.entries = {
 			"flashes",
 			"additiveafterimages",
 			"ihavethemusicwad",
+			"clutchstyle",
+			"sharecombos",
+			"dontshowach"
 		}
 	},
 	[3] = {
 		title = "I/O Stuff",
 		color = SKINCOLOR_CLOUDY,
 		curcolor = SKINCOLOR_SUPERGOLD4,
-		icon = "MISSING",
 		text = {
 			"Save Config",
 			"Load Config",
@@ -88,17 +94,17 @@ tm.entries = {
 		color = SKINCOLOR_GOLD,
 		text = {
 			"Don't Speed Boost",
-			"Loud Taunts",
+			"Nerf Armas",
 			"Tauntkills",
 		},
 		values = {
 			"dontspeedboost",
-			"loudtauntsenabled",
+			"nerfarma",
 			"tauntkillsenabled",
 		},
 		commands = {
 			"speedboosts",
-			"loudtaunts",
+			"nerfarma",
 			"tauntkills",
 		}
 	}

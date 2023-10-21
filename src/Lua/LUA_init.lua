@@ -141,8 +141,7 @@ rawset(_G, "TAKIS_NET", {
 	livescount = 0,
 	
 	dontspeedboost = false,
-	
-	loudtauntsenabled = true,
+	nerfarma = false,
 	tauntkillsenabled = true,
 	
 	numdestroyables = 0,
@@ -272,6 +271,7 @@ rawset(_G, "TakisInitTable", function(p)
 		//NIGHT SEX PLODE!?!?!?
 		nightsexplode = false,
 		bashtime = 0,
+		bashtics = 0,
 		
 		taunttime = 0,
 		tauntid = 0,
@@ -303,7 +303,6 @@ rawset(_G, "TakisInitTable", function(p)
 		lastgroundedpos = {},
 		
 		heartcards = TAKIS_MAX_HEARTCARDS,
-		heartcardpieces = 0,	//collect 7 rings to heal
 		
 		combo = {
 			count = 0,
@@ -341,6 +340,7 @@ rawset(_G, "TakisInitTable", function(p)
 			ihavemusicwad = 0, //samus-like check for music stuff
 			clutchstyle = 1, //0 for bar, 1 for meter
 			sharecombos = 1,
+			dontshowach = 0, //1 to not show ach messages
 		},
 		//tf2 taunt menu lol
 		//up to 7 taunts, detected with BT_WEAPONMASK
@@ -415,18 +415,12 @@ rawset(_G, "TakisInitTable", function(p)
 				text = "\x85Happy Hour trigger"
 			},
 			cards = {},
-			cardpieces = {},
 			/*
 			["heartcard"] = {
 				tics = 0, 
 				score = 0,
 				text = pnk.."Heart Card"
-			},
-			["heartcardpiece"] = {
-				tics = 0, 
-				score = 0,
-				text = pnk.."Heart Card Piece"
-			},
+			}
 			*/
 		},
 		
@@ -782,6 +776,8 @@ sfxinfo[sfx_tcmupc].caption = "\x83".."Combo up!\x80"
 
 SafeFreeslot("sfx_shgnbs")
 sfxinfo[sfx_shgnbs].caption = "Shoulder Bash"
+SafeFreeslot("sfx_hrtcdt")
+sfxinfo[sfx_hrtcdt].caption = "Tink"
 
 --spr_ freeslot
 
@@ -832,6 +828,14 @@ states[S_PLAY_TAKIS_SHOULDERBASH] = {
     tics = TR,
     nextstate = S_PLAY_STND
 }
+freeslot("S_PLAY_TAKIS_SHOULDERBASH_JUMP")
+states[S_PLAY_TAKIS_SHOULDERBASH_JUMP] = {
+    sprite = SPR_PLAY,
+    frame = SPR2_SGBS,
+    tics = 4,
+    nextstate = S_PLAY_TAKIS_SHOULDERBASH
+}
+
 freeslot("S_PLAY_TAKIS_SHOTGUNSTOMP")
 states[S_PLAY_TAKIS_SHOTGUNSTOMP] = {
     sprite = SPR_PLAY,
@@ -843,7 +847,7 @@ freeslot("S_PLAY_TAKIS_KILLBASH")
 states[S_PLAY_TAKIS_KILLBASH] = {
     sprite = SPR_PLAY,
     frame = SPR2_CLKB,
-    tics = TR/3,
+    tics = 12,
     nextstate = S_PLAY_FALL
 }
 
@@ -1016,12 +1020,28 @@ states[S_TAKIS_BADNIK_RAGDOLL_A] = {
 	tics = (1*2)*20,
 }
 
+freeslot("S_TAKIS_HEARTCARD_SPIN")
+states[S_TAKIS_HEARTCARD_SPIN] = {
+    sprite = SPR_HTCD,
+    frame = A|FF_PAPERSPRITE,
+	tics = -1,
+}
+
 --
 
 --mobj freeslot
 
-freeslot("MT_TAKIS_DRILLEFFECT")
+freeslot("MT_TAKIS_HEARTCARD")
+mobjinfo[MT_TAKIS_HEARTCARD] = {
+	doomednum = 3001,
+	spawnstate = S_TAKIS_HEARTCARD_SPIN,
+	spawnhealth = 1000,
+	height = 50*FU,
+	radius = 25*FU,
+	flags = MF_SLIDEME|MF_SPECIAL
+}
 
+freeslot("MT_TAKIS_DRILLEFFECT")
 mobjinfo[MT_TAKIS_DRILLEFFECT] = {
 	doomednum = -1,
 	spawnstate = S_TAKIS_DRILLEFFECT,
@@ -1159,7 +1179,7 @@ addHook("NetVars",function(n)
 	TAKIS_NET = n($)
 	TAKIS_MAX_HEARTCARDS = n($)
 	TAKIS_DEBUGFLAG = n($)
-	HAPPY_HOUR = n($)
+	//HAPPY_HOUR = n($) //maybe, maybe not? strange stuff occuring in ptje
 	TAKIS_ACHIEVEMENTINFO = n($)
 	SPIKE_LIST = n($)
 end)

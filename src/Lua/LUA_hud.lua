@@ -108,6 +108,7 @@ local function drawheartcards(v,p)
 	end
 
 	//heal indc.
+	/*
 	if takis.heartcards ~= TAKIS_MAX_HEARTCARDS
 	and not (takis.fakeexiting)
 	and (me.health or p.playerstate == PST_LIVE)
@@ -116,6 +117,7 @@ local function drawheartcards(v,p)
 		v.drawString((maxx/FU)+10+7+(xoff/FU),15+8+3-2+4,"7",V_SNAPTOLEFT|V_SNAPTOTOP|V_HUDTRANS|V_PERPLAYER,"thin")
 		v.drawScaled(maxx+(10*FU)+(25*FU)+xoff, 33*FU, FU/2,v.getSpritePatch("RING", A, 0, 0), V_SNAPTOLEFT|V_SNAPTOTOP|V_HUDTRANS|V_PERPLAYER)
 	end
+	*/
 	
 end
 
@@ -1474,7 +1476,7 @@ local function drawtelebar(v,p)
 		local color = p.skincolor
 		
 			--Ammo bar
-			local pos = 0
+			local pos = 0 
 			while (pos < maxammo)
 				local patch = patch3
 				pos = $ + 1
@@ -2168,6 +2170,9 @@ local function drawcrosshair(v,p)
 	local scale = FU/2
 	if takis.shotguncooldown
 		scale = $+FixedDiv(takis.shotguncooldown*FU,6*FU)
+		trans = V_HUDTRANSHALF
+	end
+	if (takis.noability & NOABIL_SHOTGUN)
 		trans = V_HUDTRANSHALF
 	end
 	

@@ -357,18 +357,22 @@ addHook("MobjThinker", function(rag)
 		poof.fuse = 10				
 	end
 	//do hitboxes
-		local oldbox = {rag.radius,rag.height}
-		
-		local px = rag.x
-		local py = rag.y
-		local br = FixedDiv(rag.radius*5/2,2*FU)
-		searchBlockmap("objects", function(rag, found)
-			if found and found.valid
-			and (found.health)
-			and (L_ZCollide(rag,found))
-				if (found.type == MT_EGGMAN_BOX)
-					return false
-				end
+	//make hitting stuff more generous
+	local oldbox = {rag.radius,rag.height}
+	rag.radius,rag.height = $1*2, $2*2
+	
+	local oldpos = {rag.x,rag.y,rag.z}
+	P_SetOrigin(rag,oldpos[1],oldpos[2],
+		oldpos[3]-(rag.height/2*P_MobjFlip(rag))
+	)
+	local px = rag.x
+	local py = rag.y
+	local br = FixedDiv(rag.radius*5/2,2*FU)
+	searchBlockmap("objects", function(rag, found)
+		if found and found.valid
+		and (found.health)
+		and (L_ZCollide(rag,found))
+			if (found.takis_flingme ~= false)
 				if (found.flags & (MF_ENEMY|MF_BOSS))
 				or (found.flags & MF_MONITOR)
 				or (found.takis_flingme)
@@ -377,7 +381,10 @@ addHook("MobjThinker", function(rag)
 					P_KillMobj(found,rag,rag.parent2)
 				end
 			end
-		end, rag, px-br, px+br, py-br, py+br)		
+		end
+	end, rag, px-br, px+br, py-br, py+br)
+	rag.radius,rag.height = unpack(oldbox)
+	P_SetOrigin(rag,oldpos[1],oldpos[2],oldpos[3])
 	//
 	
 	rag.angle = $-ANG10
@@ -428,15 +435,14 @@ addHook("MobjThinker", function(rag)
 		searchBlockmap("objects", function(helper, found)
 			if found and found.valid
 			and (found.health)
-				if (found.type == MT_EGGMAN_BOX)
-					return false
-				end
-				if (found.flags & (MF_ENEMY|MF_BOSS))
-				or (found.flags & MF_MONITOR)
-				or (found.takis_flingme)
-					SpawnRagThing(found,helper,helper.parent2)
-				elseif (SPIKE_LIST[found.type] == true)
-					P_KillMobj(found,helper,helper.parent2)
+				if (found.takis_flingme ~= false)
+					if (found.flags & (MF_ENEMY|MF_BOSS))
+					or (found.flags & MF_MONITOR)
+					or (found.takis_flingme)
+						SpawnRagThing(found,helper,helper.parent2)
+					elseif (SPIKE_LIST[found.type] == true)
+						P_KillMobj(found,helper,helper.parent2)
+					end
 				end
 			end
 		end, helper, px-br, px+br, py-br, py+br)		
@@ -496,6 +502,7 @@ local function docards(post,touch)
 	end	
 	
 	TakisHealPlayer(touch.player,touch,touch.player.takistable,2)
+	S_StartSound(post,sfx_takhel,touch.player)
 	touch.player.takistable.HUD.statusface.happyfacetic = 3*TR/2
 	
 end
@@ -571,6 +578,7 @@ addHook("MobjDeath",function(t,i,s)
 		
 		if s.player.powers[pw_shield] & SH_FIREFLOWER
 			TakisHealPlayer(s.player,s,s.player.takistable,1,1)
+			S_StartSound(s,sfx_takhel,s.player)
 		end
 	end
 end,MT_FIREFLOWER)
@@ -733,10 +741,15 @@ local function happyhourmus(oldname, newname, mflags,looping,pos,prefade,fade)
 		
 		local pizzatime = HAPPY_HOUR.happyhour
 		newname = string.lower(newname)
+		local isspecsong
+		isspecsong = string.sub(newname,1,1) == "_"
+		if not isspecsong
+			isspecsong = TAKIS_NET.specsongs[newname]
+		end
 		
 		//stop any lap music
 		if pizzatime 
-		and (TAKIS_NET.specsongs[newname] ~= true)
+		and (not isspecsong)
 		
 			local changetohappy = true
 			
@@ -768,10 +781,6 @@ local function happyhourmus(oldname, newname, mflags,looping,pos,prefade,fade)
 		
 	else
 
-		if (multiplayer or netgame)
-			return
-		end
-		
 		if not consoleplayer.takistable.shotgunned
 			return
 		end
@@ -867,31 +876,28 @@ addHook("MobjThinker",function(mo)
 			P_KillMobj(mo)
 			return
 		end
-
-		local x = cos(mo.target.player.drawangle-ANGLE_90)
-		local y = sin(mo.target.player.drawangle-ANGLE_90)
 		
-		mo.angle = mo.target.player.drawangle
-		mo.color = mo.target.player.skincolor
-		if mo.target.player.takistable.critcharged
-			mo.colorized = true
-			if not (leveltime%5)
-				local g = P_SpawnGhostMobj(mo)
-				g.blendmode = AST_ADD
-				g.angle = mo.angle
-				g.destscale = FixedMul(mo.scale,3*FU/4)
-				g.fuse = 15
-			end
-		else
-			mo.colorized = false
+		local p = mo.target.player
+		
+		local trans = 0
+		
+		if (p.takistable.noability & NOABIL_SHOTGUN)
+			trans = FF_TRANS50
 		end
+		
+		local x = cos(p.drawangle-ANGLE_90)
+		local y = sin(p.drawangle-ANGLE_90)
+		
+		mo.angle = p.drawangle
 		
 		if mo.target.eflags & MFE_VERTICALFLIP
 			mo.eflags = $|MFE_VERTICALFLIP
 			P_MoveOrigin(mo, mo.target.x+(16*x), mo.target.y+(16*y), (mo.target.z + mo.target.height - mo.height)-(mo.target.height/2))
 		else
 			P_MoveOrigin(mo, mo.target.x+(16*x), mo.target.y+(16*y), mo.target.z+(mo.target.height/2) )
-		end	
+		end
+		
+		mo.frame = A|trans
 	else
 		local rag = mo
 		
@@ -1524,4 +1530,127 @@ for k,type in pairs(flinglist)
 	addHook("MobjSpawn",makefling,type)
 end
 
+//heartcards mt
+addHook("MobjSpawn",function(card)
+	local cardscale = 2*FU
+	
+	if not card
+	or not card.valid
+		return
+	end
+	
+	if (card.flags2 & MF2_AMBUSH)
+		card.flags = $|MF_NOGRAVITY
+	end
+	
+	card.spritexscale,card.spriteyscale = cardscale,cardscale
+end,MT_TAKIS_HEARTCARD)
+
+addHook("MobjThinker",function(card)
+	if not card
+	or not card.valid
+		return
+	end
+	
+	local grounded = P_IsObjectOnGround(card)
+	card.angle = $+FixedAngle(5*FU)
+	card.spawnflags = mobjinfo[card.type].flags
+	if (card.flags2 & MF2_AMBUSH)
+		card.spawnflags = $|MF_NOGRAVITY
+	end
+	if card.groundtime == nil
+		card.groundtime = 0
+	end
+	if card.timealive == nil
+		card.timealive = 1
+	else
+		card.timealive = $+1
+	end
+	
+	if grounded
+		if (card.eflags & MFE_JUSTHITFLOOR)
+			if (-card.lastmomz > 2*FU)
+				P_SetObjectMomZ(card,-card.lastmomz/2)
+				S_StartSound(card,sfx_hrtcdt)
+			end
+		end
+		
+		card.groundtime = $+1
+		local waveforce = FU
+		local ay = FixedMul(waveforce,sin(card.groundtime*3*ANG2))
+		card.spriteyoffset = 3*FU+ay
+	else
+		if card.groundtime
+			card.groundtime = $-1
+		end
+	end
+	card.lastmomz = card.momz
+end,MT_TAKIS_HEARTCARD)
+
+addHook("MobjDeath",function(card,_,sor)
+	if not card
+	or not card.valid
+		return
+	end
+	
+	local ttime = card.timealive or 0
+	
+	if sor
+	and sor.skin == TAKIS_SKIN
+	and sor.player
+	and sor.player.valid
+		local doreturn = false
+		if (sor.player.takistable.heartcards ~= TAKIS_MAX_HEARTCARDS)
+		and (ttime > 4)
+			TakisHealPlayer(sor.player,sor,sor.player.takistable,1,1)
+			local sound = P_SpawnGhostMobj(card)
+			sound.flags2 = $|MF2_DONTDRAW
+			sound.fuse = TR
+			S_StartSound(sound,sfx_takhel,sor.player)
+			doreturn = true
+		end
+		if (sor.player.takistable.combo.time)
+		and (ttime > 4)
+			TakisGiveCombo(sor.player,sor.player.takistable,false)
+			S_StartSound(sor,sfx_ncitem,sor.player)
+			local spark = P_SpawnMobjFromMobj(card,0,0,0,MT_THOK)
+			spark.fuse = -1
+			spark.state = mobjinfo[MT_RING].deathstate
+			spark.scale = $*2
+			doreturn = true
+		end
+		if (doreturn)
+			return
+		end
+		card.health = 1000
+		card.flags = card.spawnflags or mobjinfo[card.type].flags
+		return true
+	else
+		card.health = 1000
+		card.flags = card.spawnflags or mobjinfo[card.type].flags
+		return true
+	end
+	
+	
+end,MT_TAKIS_HEARTCARD)
+
+local function dontfling(mo)
+	if not mo
+	or not mo.valid
+		return
+	end
+	
+	mo.takis_flingme = false
+
+end
+
+local dontflinglist = {
+	MT_EGGMAN_GOLDBOX,
+	MT_EGGMAN_BOX,
+	MT_BIGMINE
+}
+
+for k,type in ipairs(dontflinglist)
+	addHook("MobjSpawn",dontfling,type)
+end
 filesdone = $+1

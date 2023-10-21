@@ -228,22 +228,6 @@ COM_AddCommand("takis_instructions", function(p)
 	CONS_Printf(p, "Open your latest-log.txt and copy the link into your browser!")
 end)
 
-COM_AddCommand("takis_loudtaunts", function(p)
-	local takis = p.takistable
-	
-	if not takis
-		return
-	end
-	
-	if not takis.isElevated
-		prn(p,"You need to be the server or an admin to use this.")
-		return
-	end
-	
-	TAKIS_NET.loudtauntsenabled = not $
-	print("Set Loud Taunts to "..tostring(TAKIS_NET.loudtauntsenabled))
-end)
-
 COM_AddCommand("takis_tauntkills", function(p)
 	local takis = p.takistable
 	
@@ -274,6 +258,21 @@ COM_AddCommand("takis_speedboosts", function(p)
 	
 	TAKIS_NET.dontspeedboost = not $
 	print("Set Speed Boosts to "..tostring(not TAKIS_NET.dontspeedboost))
+end)
+COM_AddCommand("takis_nerfarma", function(p)
+	local takis = p.takistable
+	
+	if not takis
+		return
+	end
+	
+	if not takis.isElevated
+		prn(p,"You need to be the server or an admin to use this.")
+		return
+	end
+	
+	TAKIS_NET.nerfarma = not $
+	print("Nerfed Armas to "..tostring(TAKIS_NET.nerfarma))
 end)
 
 COM_AddCommand("takis_showmenuhints", function(p)
@@ -419,7 +418,7 @@ COM_AddCommand("takis_ihavethemusicwad", function(p)
 		prn(p,"\x82Just gonna assume you've downloaded TakisMusic.pk3! Takis will start loading it on spawn!")
 		takis.io.ihavemusicwad = 1
 		if (p and p.valid)
-			COM_BufInsertText(p, "addfile takismusic.pk3; tunes -nones")
+			COM_BufInsertText(p, "addfile takismusic.pk3; tunes -none")
 		elseif consoleplayer
 			COM_BufInsertText(consoleplayer, "addfile takismusic.pk3; tunes -none")
 		end
@@ -441,14 +440,57 @@ COM_AddCommand("takis_clutchstyle", function(p)
 	end
 	
 	if p.takistable.io.clutchstyle
-		p.takistable.io.additiveai = 0
+		p.takistable.io.clutchstyle = 0
 		prn(p,"The Clutch Bar will now be near the lives area.")
 	else
 		p.takistable.io.clutchstyle = 1
-		prn(p,skins[TAKIS_SKIN].realname.." will now have additive afterimages.")
+		prn(p,"The Clutch Bar will now be near Takis.")
 	end
 	
 	TakisSaveStuff(p)
 end)
+COM_AddCommand("takis_dontshowach", function(p)
+	if gamestate ~= GS_LEVEL
+		prn(p,"You can't use this right now.")
+		return
+	end
+	
+	if not (p.takistable)
+		prn(p,"You can't use this right now.")
+		return	
+	end
+	
+	if p.takistable.io.dontshowach
+		p.takistable.io.dontshowach = 0
+		prn(p,"You will now be able to see when other Takis players get achievements.")
+	else
+		p.takistable.io.dontshowach = 1
+		prn(p,"You will no longer be able to see when other Takis players get achievements.")
+	end
+	
+	TakisSaveStuff(p)
+end)
+COM_AddCommand("takis_sharecombos", function(p)
+	if gamestate ~= GS_LEVEL
+		prn(p,"You can't use this right now.")
+		return
+	end
+	
+	if not (p.takistable)
+		prn(p,"You can't use this right now.")
+		return	
+	end
+	
+	if p.takistable.io.sharecombos
+		p.takistable.io.sharecombos = 0
+		prn(p,"You will will no longer share Combos with other Takis players.")
+	else
+		p.takistable.io.sharecombos = 1
+		prn(p,"You will now be able to share Combos with other Takis players.")
+	end
+	
+	TakisSaveStuff(p)
+end)
+
 
 filesdone = $+1

@@ -168,9 +168,20 @@ rawset(_G,"TakisAwardAchievement",function(p,achieve)
 		return
 	end
 	
-	S_StartSound(nil,sfx_achern)
+	S_StartSound(nil,sfx_achern,p)
 	
-	chatprint("\x82*"..p.name.." has just gotten the \x83"..TAKIS_ACHIEVEMENTINFO[achieve].name.."\x82 achievement!")
+	for p2 in players.iterate
+		if p2 == p
+			continue
+		end
+		
+		if p2.takistable.io.dontshowach == 1
+			continue
+		end
+		
+		chatprintf(p2,"\x82*"..p.name.." has just gotten the \x83"..TAKIS_ACHIEVEMENTINFO[achieve].name.."\x82 achievement!")
+		S_StartSound(nil,sfx_achern,p2)
+	end
 	
 	if not (p.takistable.HUD.showingachs & achieve)
 		table.insert(p.takistable.HUD.steam,{tics = 4*TR,xadd = 9324919,enum = achieve})

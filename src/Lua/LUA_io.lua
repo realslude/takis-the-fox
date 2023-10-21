@@ -4,7 +4,7 @@
 //Y7GDSUYFHIDJPK AAAAAAAAAAAHHHHHHHHH!!!!!!!!
 
 //if you use this manually and mess something up, its not my fault!
-COM_AddCommand("takis_load", function(p, a1,a2,a3,a4,t1,t2,a5,a6,a7,a8,a9,a10,a11,a12)
+COM_AddCommand("takis_load", function(p, a1,a2,a3,a4,t1,t2,a5,a6,a7,a8,a9,a10,a11,a12,a13)
 
 if a1 == nil
 CONS_Printf(p,"\x85"+"Do not use this command manually! You may risk messing up Takis or your config!")
@@ -28,6 +28,7 @@ a9 = tonumber($)
 a10 = tonumber($)
 a11 = tonumber($)
 a12 = tonumber($)
+a13 = tonumber($)
 
 //insert to buffer or set vars directly?
 //well i say set vars as to  not clutter up the player's console
@@ -149,6 +150,14 @@ else
 	CONS_Printf(p,"\x85"+"Error loading Share Combos! Defaulting to 1...")
 end
 
+if a13 == 1
+	takis.io.dontshowach = 1
+elseif a13 == 0
+	takis.io.dontshowach = 0
+else
+	CONS_Printf(p,"\x85"+"Error loading Don't show Achs.! Defaulting to 1...")
+end
+
 CONS_Printf(p, "\x82Loaded "..skins[TAKIS_SKIN].realname.."' Settings!")
 end)
 
@@ -168,6 +177,7 @@ rawset(_G, "TakisSaveStuff", function(p, silent)
 	local a10 = 0
 	local a11 = 0
 	local a12 = 0
+	local a13 = 0
 	
 	local t = p.takistable.io
 	local tay = p.takistable
@@ -186,6 +196,7 @@ rawset(_G, "TakisSaveStuff", function(p, silent)
 	a10 = t.ihavemusicwad
 	a11 = t.clutchstyle
 	a12 = t.sharecombos
+	a13 = t.dontshowach
 	
 	if io
 		DEBUG_print(p,"Using I/O, Writing")
@@ -195,7 +206,7 @@ rawset(_G, "TakisSaveStuff", function(p, silent)
 		local file = io.openlocal("client/takisthefox/config.dat", "w+")
 		file:write(" "..a1.." "..a2.." "..a3.." "..a4.." "..t1.." "
 			..t2.." "..a5.." "..a6.." "..a7.." "..a8.." "..a9.." "
-			..a10.." "..a11.." "..a12
+			..a10.." "..a11.." "..a12.." "..a13
 		)
 		
 		if not silent
