@@ -723,20 +723,23 @@ local function happyhourmus(oldname, newname, mflags,looping,pos,prefade,fade)
 		return
 	end
 	
-	if (HAPPY_HOUR.happyhour)
+	local dohhmus = true
+	if (consoleplayer.takistable.io.nohappyhour == 1)
+		dohhmus = false
+	end
 	
-		if (consoleplayer.takistable.io.nohappyhour == 1)
-			return
-		end
+	if (skins[consoleplayer.skin].name ~= TAKIS_SKIN)
+	and (consoleplayer.takistable.io.morehappyhour == 0)
+		dohhmus = false
+	end
+	
+	if (HAPPY_HOUR.happyhour)
+	and dohhmus
+	
 		
 		local song = "hapyhr"
 		if (consoleplayer.takistable.io.happyhourstyle == 2)
 			song = "hpyhr2"
-		end
-		
-		if (skins[consoleplayer.skin].name ~= TAKIS_SKIN)
-		and (consoleplayer.takistable.io.morehappyhour == 0)
-			return
 		end
 		
 		local pizzatime = HAPPY_HOUR.happyhour
@@ -937,10 +940,7 @@ addHook("MobjMoveCollide",function(shot,mo)
 		SpawnRagThing(mo,shot,shot.tracer)
 	end
 	
-	if (mo.type == MT_BOMBSPHERE
-	or mo.type == MT_SPIKEBALL
-	or mo.type == MT_WALLSPIKE
-	or mo.type == MT_SPIKE)
+	if (SPIKE_LIST[mo.type] == true)
 		P_KillMobj(mo,shot,shot.tracer)
 	end
 	

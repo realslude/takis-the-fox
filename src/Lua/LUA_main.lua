@@ -86,6 +86,7 @@
 	-[done]rings give too much score
 	-we may be loading other people's cfgs??
 	-[done]offset afterimages to start at salmon
+	-sometimes shotgun shots dont give combo?
 	
 	Dear Pesky Plumbers,
 
@@ -603,6 +604,7 @@ addHook("PlayerThink", function(p)
 				
 					//shoulder bash
 					if takis.c1 == 1
+					and not (takis.tossflag)
 					and not takis.bashtime
 					and not (takis.inPain or takis.inFakePain)
 					and not (takis.noability & NOABIL_SHOTGUN)
@@ -1046,6 +1048,27 @@ addHook("PlayerThink", function(p)
 					if me.state ~= S_PLAY_TAKIS_SHOTGUNSTOMP
 						me.state = S_PLAY_TAKIS_SHOTGUNSTOMP
 					end
+					//wind ring
+					if not (takis.hammerblastdown % 6)
+					and takis.hammerblastdown > 6
+					and (me.momz*takis.gravflip < 0)
+						local ring = P_SpawnMobjFromMobj(me,
+							0,0,-5*me.scale*takis.gravflip,MT_WINDRINGLOL
+						)
+						if (ring and ring.valid)
+							ring.renderflags = RF_FLOORSPRITE
+							ring.frame = $|FF_TRANS50
+							ring.startingtrans = FF_TRANS50
+							ring.scale = FixedDiv(me.scale,2*FU)
+							P_SetObjectMomZ(ring,10*me.scale)
+							//i thought this would fade out the object
+							ring.fuse = 10
+							ring.destscale = FixedMul(ring.scale,2*FU)
+							ring.colorized = true
+							ring.color = SKINCOLOR_WHITE
+						end
+					end
+					
 				end
 				
 				takis.hammerblastjumped = 0
@@ -1077,7 +1100,7 @@ addHook("PlayerThink", function(p)
 					//wind ring
 					if not (takis.hammerblastdown % 6)
 					and takis.hammerblastdown > 6
-					and (me.momz*takis.gravflip < 0*me.scale)
+					and (me.momz*takis.gravflip < 0)
 					and (takis.hammerblasthitbox and takis.hammerblasthitbox.valid)
 						local ring = P_SpawnMobjFromMobj(takis.hammerblasthitbox,
 							0,0,-5*me.scale*takis.gravflip,MT_WINDRINGLOL
@@ -3039,6 +3062,8 @@ addHook("MobjDeath", function(mo,_,_,dmgt)
 	if (mo.state ~= S_PLAY_DEAD)
 		mo.state = S_PLAY_DEAD
 	end
+	
+	TakisResetHammerTime(mo.player)
 	
 	if (mo.player.takistable.heartcards > 0)
 		mo.player.takistable.HUD.heartcards.shake = $+TAKIS_HEARTCARDS_SHAKETIME

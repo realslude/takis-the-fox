@@ -982,6 +982,34 @@ local function drawclutches(v,p,cam)
 					"thin-fixed"
 				)
 			end
+			if (takis.clutchspamcount)
+			and not (takis.clutchcombo)
+				if (takis.clutchspamcount >= 3)
+				and (takis.clutchspamcount < 7)
+					v.drawString(x,y,
+						"don't",
+						V_PERPLAYER|V_HUDTRANS,
+						"thin-fixed"
+					)			
+					v.drawString(x,y+8*FU,
+						"spam",
+						V_PERPLAYER|V_HUDTRANS,
+						"thin-fixed"
+					)
+				elseif (takis.clutchspamcount >= 7)
+					v.drawString(x,y,
+						"clutch on",
+						V_PERPLAYER|V_HUDTRANS,
+						"thin-fixed"
+					)			
+					v.drawString(x,y+8*FU,
+						"green",
+						V_PERPLAYER|V_HUDTRANS,
+						"thin-fixed"
+					)				
+				end
+			end
+			
 			if takis.clutchtime > 0
 				v.drawScaled(x, y, scale, bubble, V_PERPLAYER|V_HUDTRANS)
 				
@@ -2179,6 +2207,56 @@ local function drawcrosshair(v,p)
 	v.drawScaled(160*FU,100*FU,scale,v.cachePatch("SHGNCRSH"),trans)
 end
 
+local function drawbubbles(v,p,cam)
+	//chrispy chars
+	local player = p
+	local mo = player.mo
+	
+	local flip = 1
+	local bubble = v.cachePatch("TA_BUBBLE")
+	local angdiff = ANGLE_90
+	local x, y, scale
+	local cutoff = function(y) return false end
+	
+	if cam.chase and not (player.awayviewtics and not (me.flags2 & MF2_TWOD))
+		x, y, scale = R_GetScreenCoords(v, player, cam, mo)
+		x = $+(10*scale)
+		if mo.eflags & MFE_VERTICALFLIP
+		and player.pflags & PF_FLIPCAM
+			y = 200*FRACUNIT - $
+		else
+			flip = P_MobjFlip(mo)
+		end
+	else
+		x, y, scale = 160*FRACUNIT, (100 + bubble.height >> 1)*FRACUNIT, FRACUNIT/3
+	end
+	
+	if splitscreen
+		if player == secondarydisplayplayer
+			cutoff = function(y) return y < (bubble.height*scale >> 1) end
+		else
+			cutoff = function(y) return y > 200*FRACUNIT + (bubble.height*scale >> 1) end
+		end
+	end
+	
+	local angle = angdiff - ANGLE_90
+	local x = x - P_ReturnThrustX(nil, angle, 50*scale)
+	local y = y - flip*P_ReturnThrustY(nil, angle, 64*scale)
+		
+	if not cutoff(y)
+	and p.powers[pw_underwater]
+		local j = -1
+		for i = -3,2
+			j = $+1
+			local flag = V_HUDTRANSHALF
+			if j-1 < p.powers[pw_underwater]/TR/5
+				flag = V_HUDTRANS
+			end
+			v.drawScaled(x, y+(i*25*scale), scale, bubble, V_PERPLAYER|flag)
+		end
+	end
+end
+
 local function DrawButton(v, player, x, y, flags, color, color2, butt, symb, strngtype)
 -- Buttons! Shows input controls.
 -- butt parameter is the button cmd in question.
@@ -2590,6 +2668,7 @@ addHook("HUD", function(v,p,cam)
 			//drawwareffect(v,p)
 			if not (takis.cosmenu.menuinaction)
 				drawclutches(v,p,cam)
+				drawbubbles(v,p,cam)
 				drawrings(v,p)
 				drawtimer(v,p)
 				drawlivesarea(v,p)
