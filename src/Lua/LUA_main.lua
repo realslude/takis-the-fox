@@ -911,9 +911,10 @@ addHook("PlayerThink", function(p)
 					//literally just hammerblast lol
 					if (takis.c2 == 1)
 					and not takis.onGround
-					and not takis.thokked
+					and not (takis.shotguncooldown)
 					and not (takis.hammerblastdown)
 					and (takis.notCarried)
+					and not (takis.inPain or takis.inFakePain)
 					and not (takis.noability & NOABIL_SHOTGUN)
 						S_StartSound(me,sfx_shgns)
 						
@@ -938,6 +939,7 @@ addHook("PlayerThink", function(p)
 				//un-shotgun
 				if takis.c3 == 1
 				and takis.shotgunned
+				and not (takis.tossflag)
 					TakisDeShotgunify(p)
 				end
 				
@@ -2270,11 +2272,6 @@ addHook("MobjDamage", function(mo,inf,sor,_,dmgt)
 	end
 
 	//BUT!!
-	if takis.accspeed >= (6*(40*FU)/5)
-	and takis.afterimaging
-		return true
-	end
-
 	if (p.powers[pw_shield] == SH_ARMAGEDDON)
 		TakisPowerfulArma(p)
 		return true

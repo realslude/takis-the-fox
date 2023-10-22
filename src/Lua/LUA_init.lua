@@ -1179,9 +1179,10 @@ addHook("NetVars",function(n)
 	TAKIS_NET = n($)
 	TAKIS_MAX_HEARTCARDS = n($)
 	TAKIS_DEBUGFLAG = n($)
-	//HAPPY_HOUR = n($) //maybe, maybe not? strange stuff occuring in ptje
 	TAKIS_ACHIEVEMENTINFO = n($)
 	SPIKE_LIST = n($)
+	//weird stuff happening in ptd... maybe ded serv issue?
+	HAPPY_HOUR = n($)
 end)
 
 filesdone = $+1

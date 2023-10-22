@@ -217,7 +217,7 @@ COM_AddCommand("panic", function(p,tics,flags)
 	
 end,COM_ADMIN)
 
-COM_AddCommand("shotgun", function(p,tics)
+COM_AddCommand("shotgun", function(p)
 	if gamestate ~= GS_LEVEL
 		prn(p,"You can't use this right now.")
 		return
@@ -243,6 +243,82 @@ COM_AddCommand("shotgun", function(p,tics)
 		TakisShotgunify(p)
 	end
 	
+end,COM_ADMIN)
+
+local function GetPlayerHelper(pname)
+	-- Find a player using their node or part of their name.
+	local N = tonumber(pname)
+	if N ~= nil and N >= 0 and N < 32 then
+		for player in players.iterate do
+			if #player == N then
+	return player
+			end
+		end
+	end
+	for player in players.iterate do
+		if string.find(string.lower(player.name), string.lower(pname)) then
+			return player
+		end
+	end
+	return nil
+end
+local function GetPlayer(player, pname)
+	local player2 = GetPlayerHelper(pname)
+	if not player2 then
+		CONS_Printf(player, "No one here has that name.")
+	end
+	return player2
+end
+
+COM_AddCommand("shotgunfor", function(p,p2)
+	if gamestate ~= GS_LEVEL
+		prn(p,"You can't use this right now.")
+		return
+	end
+	
+	local p2 = GetPlayer(p,node)
+	if p2
+		if not (p2.takistable)
+			prn(p,"You can't use this right now.")
+			return	
+		end
+		
+		local takis = p2.takistable
+		if not (p2.mo.health)
+		or (p2.mo.skin ~= TAKIS_SKIN)
+			prn(p,"You can't use this right now.")
+			return	
+		end
+		
+		if (takis.shotgunned)
+			TakisDeShotgunify(p2)
+		
+		else
+			TakisShotgunify(p2)
+		end
+		
+		prn(p,"Shotgunified "..p2.name)
+		prn(p2,p.name.." gifted you with the Shotgun")
+	end
+end,COM_ADMIN)
+
+COM_AddCommand("setmaxhp",function(p,amt)
+	if gamestate ~= GS_LEVEL
+		CONS_Printf(p,"You can't use this right now.")
+	end
+
+	amt = abs(tonumber(amt))
+
+	if (amt == nil)
+		CONS_Printf(p,"Type number lel")
+		return
+	else
+		if amt == 0
+			CONS_Printf(p,"You do this you die")
+			return
+		end
+		TAKIS_MAX_HEARTCARDS = amt
+	end
 end,COM_ADMIN)
 
 filesdone = $+1
