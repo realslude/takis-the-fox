@@ -114,6 +114,7 @@ local noabflags = {
 	"SLIDE",
 	"WAVEDASH",
 	"SHOTGUN",		//generally for anything shotgunned
+	"SHIELD",
 }
 for k,v in ipairs(noabflags)
 	rawset(_G,"NOABIL_"..v,1<<(k-1))
@@ -430,6 +431,7 @@ rawset(_G, "TakisInitTable", function(p)
 		shotguncooldown = 0,
 		shotguntime = 0,
 		timesincelastshot = 0,
+		shotguntuttic = 0,
 		
 		//bools
 		onGround = false,
@@ -778,6 +780,25 @@ SafeFreeslot("sfx_shgnbs")
 sfxinfo[sfx_shgnbs].caption = "Shoulder Bash"
 SafeFreeslot("sfx_hrtcdt")
 sfxinfo[sfx_hrtcdt].caption = "Tink"
+//tb = textbox
+//open
+SafeFreeslot("sfx_tb_opn")
+sfxinfo[sfx_tb_opn].caption = "/"
+//close
+SafeFreeslot("sfx_tb_cls")
+sfxinfo[sfx_tb_cls].caption = "/"
+//tween in
+SafeFreeslot("sfx_tb_tin")
+sfxinfo[sfx_tb_tin].caption = "/"
+//tween out
+SafeFreeslot("sfx_tb_tot")
+sfxinfo[sfx_tb_tot].caption = "/"
+SafeFreeslot("sfx_s_tak1")
+sfxinfo[sfx_s_tak1].caption = "/"
+SafeFreeslot("sfx_s_tak2")
+sfxinfo[sfx_s_tak2].caption = "/"
+SafeFreeslot("sfx_s_tak3")
+sfxinfo[sfx_s_tak3].caption = "/"
 
 --spr_ freeslot
 
@@ -816,6 +837,8 @@ SafeFreeslot("SPR2_HHF_")
 SafeFreeslot("SPR2_SGBS")
 SafeFreeslot("SPR2_SGST")
 SafeFreeslot("SPR2_CLKB")
+//PLACEHOLH
+SafeFreeslot("SPR2_PLHD")
 
 --
 
@@ -824,14 +847,14 @@ SafeFreeslot("SPR2_CLKB")
 freeslot("S_PLAY_TAKIS_SHOULDERBASH")
 states[S_PLAY_TAKIS_SHOULDERBASH] = {
     sprite = SPR_PLAY,
-    frame = SPR2_SGBS,
+    frame = SPR2_PLHD, //SPR2_SGBS,
     tics = TR,
     nextstate = S_PLAY_STND
 }
 freeslot("S_PLAY_TAKIS_SHOULDERBASH_JUMP")
 states[S_PLAY_TAKIS_SHOULDERBASH_JUMP] = {
     sprite = SPR_PLAY,
-    frame = SPR2_SGBS,
+    frame = SPR2_PLHD, //SPR2_SGBS,
     tics = 4,
     nextstate = S_PLAY_TAKIS_SHOULDERBASH
 }
@@ -839,14 +862,14 @@ states[S_PLAY_TAKIS_SHOULDERBASH_JUMP] = {
 freeslot("S_PLAY_TAKIS_SHOTGUNSTOMP")
 states[S_PLAY_TAKIS_SHOTGUNSTOMP] = {
     sprite = SPR_PLAY,
-    frame = SPR2_SGST,
+    frame = SPR2_PLHD, //SPR2_SGST,
     tics = -1,
     nextstate = S_PLAY_STND
 }
 freeslot("S_PLAY_TAKIS_KILLBASH")
 states[S_PLAY_TAKIS_KILLBASH] = {
     sprite = SPR_PLAY,
-    frame = SPR2_CLKB,
+    frame = SPR2_PLHD, //SPR2_CLKB,
     tics = 12,
     nextstate = S_PLAY_FALL
 }
@@ -1182,7 +1205,9 @@ addHook("NetVars",function(n)
 	TAKIS_ACHIEVEMENTINFO = n($)
 	SPIKE_LIST = n($)
 	//weird stuff happening in ptd... maybe ded serv issue?
-	HAPPY_HOUR = n($)
+	if (gametype ~= GT_PIZZATIMEJISK)
+		HAPPY_HOUR = n($)
+	end
 end)
 
 filesdone = $+1

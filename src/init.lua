@@ -46,6 +46,7 @@ local filelistt1 = {
 	"menu",
 	"happyhour",
 	"NFreeroam",
+	"Textboxes",
 }
 local filelist = {
 	"io",

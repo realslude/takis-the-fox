@@ -540,6 +540,7 @@ local function drawlivesarea(v,p)
 	if p.takistable.inNIGHTSMode
 	or (TAKIS_NET.inspecialstage)
 	or p.takistable.inSRBZ
+	or (p.textBoxInAction)
 		return
 	end
 	
@@ -2207,6 +2208,7 @@ local function drawcrosshair(v,p)
 	v.drawScaled(160*FU,100*FU,scale,v.cachePatch("SHGNCRSH"),trans)
 end
 
+/*
 local function drawbubbles(v,p,cam)
 	//chrispy chars
 	local player = p
@@ -2256,6 +2258,7 @@ local function drawbubbles(v,p,cam)
 		end
 	end
 end
+*/
 
 local function DrawButton(v, player, x, y, flags, color, color2, butt, symb, strngtype)
 -- Buttons! Shows input controls.
@@ -2668,7 +2671,7 @@ addHook("HUD", function(v,p,cam)
 			//drawwareffect(v,p)
 			if not (takis.cosmenu.menuinaction)
 				drawclutches(v,p,cam)
-				drawbubbles(v,p,cam)
+				//drawbubbles(v,p,cam)
 				drawrings(v,p)
 				drawtimer(v,p)
 				drawlivesarea(v,p)
@@ -2699,8 +2702,25 @@ addHook("HUD", function(v,p,cam)
 				v.drawString(300-15,106,TAKIS_NET.numdestroyables,V_SNAPTORIGHT|t|V_BLUEMAP,"center")
 			end
 			
-			for k,v in ipairs(takis.bonuses)
-				v.drawString(160,100,v.text,0,"center")
+			if (takis.shotguntuttic)
+				local string = ''
+				if (takis.tossflag)
+					local dec = L_FixedDecimal(
+						FixedMul(
+							FixedDiv(takis.tossflag*FU,
+								17*FU
+							),
+							100*FU
+						),
+						1
+					)
+					string = "("..dec.."%) "
+				end
+				
+				v.drawString(160,200-25,string.."\x82TOSSFLAG\x80: Shotgun Tutorial",
+					V_ALLOWLOWERCASE|V_HUDTRANSHALF|V_SNAPTOBOTTOM,
+					"thin-center"
+				)
 			end
 		else
 			customhud.SetupItem("rings","vanilla")

@@ -1142,6 +1142,15 @@ rawset(_G, "TakisDoShorts", function(p,me,takis)
 		takis.afterimaging = false
 	end
 	
+	if (takis.wavedashcapable)
+	or (p.gotflag)
+		takis.noability = $|NOABIL_HAMMER
+	end
+	
+	if (takis.shotguntuttic)
+		takis.shotguntuttic = $-1
+	end
+	
 	p.alreadyhascombometer = 2
 	
 //shorts end
@@ -1400,6 +1409,7 @@ rawset(_G, "TakisTeamNewShields", function(player)
 	local me = p.mo
 	
 	if not (player.mo.health)
+	or (takis.noability & NOABIL_SHIELD)
 		return
 	end
 	
@@ -1502,6 +1512,7 @@ rawset(_G, "TakisHUDShieldUsability", function(player)
 	end
 	
 	if (takis.shotgunned)
+	or (takis.noability & NOABIL_SHIELD)
 		return false
 	end
 	
@@ -2883,7 +2894,13 @@ rawset(_G, "TakisShotgunify", function(p)
 	takis.shotgunned = true
 	ChangeTakisMusic("war",true,p)
 	S_StartSound(nil,sfx_shgnl,p)
+	
+	if not (TakisReadAchievements(p) & ACHIEVEMENT_BOOMSTICK)
+		takis.shotguntuttic = 4*TR+(TR/2)
+	end
+	
 	TakisAwardAchievement(p,ACHIEVEMENT_BOOMSTICK)
+	
 	if not ((takis.shotgun) and (takis.shotgun.valid))
 		local x = cos(p.drawangle-ANGLE_90)
 		local y = sin(p.drawangle-ANGLE_90)

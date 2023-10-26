@@ -493,8 +493,6 @@ addHook("PlayerThink", function(p)
 					and not (takis.inPain or takis.inFakePain)
 					and me.health
 					and (takis.notCarried)
-					and not takis.wavedashcapable
-					and not (p.gotflag)
 					and not (takis.noability & NOABIL_HAMMER)
 						S_StartSoundAtVolume(me,sfx_airham,3*255/5)
 						takis.hammerblastdown = 1
@@ -963,6 +961,13 @@ addHook("PlayerThink", function(p)
 				end
 			end
 			
+			//shotgun tutorial
+			if takis.tossflag == 17
+			and (takis.shotguntuttic)
+				CFTextBoxes:DisplayBox(p,TAKIS_TEXTBOXES.shotgun)
+				takis.shotguntuttic = 0
+			end
+			
 			if takis.taunttime > 0
 				takis.stasistic = 1
 				
@@ -1228,7 +1233,7 @@ addHook("PlayerThink", function(p)
 							spark2.momy = FixedMul(cos(fa),radius/20)
 						end
 						
-						if not (gametyperules & GTR_RINGSLINGER)
+						if not (G_RingSlingerGametype())
 							//KILL!
 							local rad = takis.lastmomz
 							local px = me.x
@@ -2374,7 +2379,8 @@ addHook("MobjDamage", function(mo,inf,sor,_,dmgt)
 			if (sor and sor.valid
 			and sor.player and sor.player.valid)
 				if (gametyperules &
-				(GTR_POINTLIMIT|GTR_RINGSLINGER|GTR_HURTMESSAGES))
+				(GTR_POINTLIMIT|GTR_RINGSLINGER|GTR_HURTMESSAGES)
+				or G_RingSlingerGametype())
 					P_AddPlayerScore(sor.player,100)
 				end
 			end
@@ -2385,7 +2391,8 @@ addHook("MobjDamage", function(mo,inf,sor,_,dmgt)
 		if (sor and sor.valid
 		and sor.player and sor.player.valid)
 			if (gametyperules &
-			(GTR_POINTLIMIT|GTR_RINGSLINGER|GTR_HURTMESSAGES))
+			(GTR_POINTLIMIT|GTR_RINGSLINGER|GTR_HURTMESSAGES)
+			or G_RingSlingerGametype())
 				P_AddPlayerScore(sor.player,50)
 			end
 		end
@@ -2910,7 +2917,7 @@ local function givecardpieces(mo, _, source)
 		
 		if mo.takis_givecombotime
 		or mo.takis_givecardpieces
-		and not (gametyperules & GTR_RINGSLINGER)
+		and not (gametyperules & GTR_RINGSLINGER or G_RingSlingerGametype())
 		and not (HAPPY_HOUR.othergt)
 			P_AddPlayerScore(source.player,((source.player.takistable.accspeed>>16)/2) * 10)
 		end

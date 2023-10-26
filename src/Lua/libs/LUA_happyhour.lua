@@ -50,8 +50,7 @@ rawset(_G,"HH_Reset",function()
 	hh.trigger = 0
 end)
 
-addHook("ThinkFrame",do
-	hh.othergt = false 
+addHook("ThinkFrame",function()
 	if (gamestate == GS_LEVEL)
 		if (leveltime < 3)
 			return
@@ -64,6 +63,11 @@ addHook("ThinkFrame",do
 			hh.timeleft = PTJE.timeleft
 			hh.time = PTJE.pizzatime_tics
 			hh.othergt = true
+			return
+		else
+			if (hh.othergt)
+				hh.othergt = false 
+			end
 		end
 		
 		if hh.happyhour
@@ -74,6 +78,7 @@ addHook("ThinkFrame",do
 				end
 				
 				hh.timeleft = hh.timelimit-hh.time
+				
 				if hh.timeleft == 0
 					if not hh.othergt
 						for p in players.iterate

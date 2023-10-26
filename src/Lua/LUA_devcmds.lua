@@ -270,9 +270,13 @@ local function GetPlayer(player, pname)
 	return player2
 end
 
-COM_AddCommand("shotgunfor", function(p,p2)
+COM_AddCommand("shotgunfor", function(p,node)
 	if gamestate ~= GS_LEVEL
 		prn(p,"You can't use this right now.")
+		return
+	end
+	
+	if node == nil
 		return
 	end
 	

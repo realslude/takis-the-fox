@@ -55,9 +55,10 @@ if (rawget(_G, "customhud")) then
 
 	if (oldvers == false) then
 		-- Existing version is OK
+		print("ASDSADSAD")
 		return;
 	end
-
+	
 	notice("An old version of customhud was detected ("..loadednum.."). Switching to newer ("..newnum.."), errors may occur.");
 end
 

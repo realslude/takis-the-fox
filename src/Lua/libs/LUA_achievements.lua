@@ -1,3 +1,5 @@
+//pretty buggy, maybe rewrite?
+
 local achs = {
 	"COMBO",
 	"BANANA",
@@ -114,6 +116,10 @@ rawset(_G,"TAKIS_ACHIEVEMENTINFO",{
 rawset(_G,"TakisReadAchievements",function(p)
 	local number = 0
 	
+	if p ~= consoleplayer
+		return p.takistable.achfile
+	end
+	
 	if io
 		DEBUG_print(p,"Using I/O, Reading Achs.")
 		
@@ -128,6 +134,7 @@ rawset(_G,"TakisReadAchievements",function(p)
 	end
 	
 	p.takistable.achfile = number
+	return number
 end)
 
 local function writeach(p,ach,num)
@@ -160,8 +167,7 @@ rawset(_G,"TakisAwardAchievement",function(p,achieve)
 		error("ACHIEVEMENT_ constant out of range.")
 	end
 	
-	TakisReadAchievements(p)
-	local number = p.takistable.achfile
+	local number = TakisReadAchievements(p)
 	
 	//we already have the achievement
 	if (number & (achieve))
