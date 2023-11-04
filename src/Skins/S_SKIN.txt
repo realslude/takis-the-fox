@@ -6,7 +6,7 @@ flags = SF_RUNONWATER|SF_NOSUPERSPRITES|SF_NOJUMPSPIN|SF_STOMPDAMAGE|SF_NOSHIELD
 
 startcolor = 96
 prefcolor = Forest
-supercolor = Copper
+supercolor = Red
 
 ability = CA_DOUBLEJUMP
 ability2 = CA2_NONE
@@ -24,6 +24,8 @@ revitem = MT_NULL
 
 contspeed = 7
 contangle = 0
+
+height = 52
 
 jumpfactor = 1.32
 
